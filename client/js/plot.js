@@ -1,3 +1,127 @@
+var DotPlot = (function (PIXI) {
+
+  /* private */
+
+  // dynamic variables
+  var _container,    // html container where the viewer will be drawn
+      _data,         // the data the view will be drawn from
+      _familySizes,  // how many genes are in each family
+      _color,        // maps families to colors
+      _options,      // the optional parameters used throughout the view
+      _w,            // width of the viewer
+      _h,            // height of the viewer
+      _iframe;       // the hidden iframe used for resizing events
+
+  // PIXI essentials
+  var _renderer,  // the PIXI renderer
+      _stage;     // the PIXI stage where the viewer is drawn
+
+  // viewer components
+
+  // constant variables
+
+
+  /**
+    * Parses parameters and initializes variables.
+    * @param {string} id - ID of element viewer will be drawn in.
+    * @param {object} data - The data the viewer will visualize.
+    * @param {object} options - Optional parameters.
+    */
+  var _init = function (id, familySizes, color, data, options) {
+    // parse positional arguments
+    _container = document.getElementById(id);
+    _familySizes = familySizes;
+    _color = color;
+    _data = data;
+
+    // initialize dynamic variables
+    _w = _container.clientWidth;
+    _h = _container.offsetHeight;
+
+    // parse optional parameters
+    _options = options || {};
+    _options.geneClick = options.geneClick || function () { };
+    _options.plotClick = options.plotClick || function () { };
+    _options.bruchCallback = options.brushCallback || function () { };
+    _options.selectiveColoring = options.selectiveColoring || false;
+    _options.autoResize = options.autoResize || false;
+
+    // prefer WebGL renderer, but fallback to canvas
+    var args = {antialias: true, transparent: true};
+    _renderer = PIXI.autoDetectRenderer(_w, _h, args);
+
+    // add the renderer drawing element to the dom
+    _container.appendChild(_renderer.view);
+
+    // create the root container of the scene graph
+    _stage = new PIXI.Container();
+  }
+
+
+  /** Adds width resize listener to the viewer's container. */
+  var _addResizeListener = function () {
+    // helper function that resizes everything
+    var resize = function() {
+      // resize the renderer
+      _w = _container.clientWidth;
+      _renderer.resize(_w, _h);
+    }
+
+    // create hidden iframe to trigger resize events
+    _iframe = document.createElement('IFRAME');
+    _iframe.setAttribute('allowtransparency', true);
+    _iframe.style.width = '100%';
+    _iframe.style.height = '0';
+    _iframe.style.position = 'absolute';
+    _iframe.style.border = 'none';
+    _iframe.style.backgroundColor = 'transparent';
+    _container.appendChild(_iframe);
+    _iframe.contentWindow.onresize = function (event) {
+      resize();
+    }
+
+    // resize once just in case a scroll bar appeared
+    resize();
+  }
+
+
+  /* public */
+
+
+  /** Frees the PIXI stage and renderer from GPU memory. */
+  var destroy = function () {
+    _stage.destroy(true);
+    _renderer.destroy(true);
+    if (_options.autoResize) {
+      _iframe.remove();
+    }
+  }
+
+
+  /** The public api - constructor. */
+  var API = function (id, familySizes, color, data, options) {
+    // initialize the viewer
+    _init(id, familySizes, color, data, options);
+    // draw the viewer
+    _draw();
+    // add a resize listener is desired
+    if (_options.autoResize) {
+      _addResizeListener();
+    }
+  }
+
+
+  /** The public api - prototype. */
+  API.prototype = {
+    constructor: DotPlot,
+    destroy: destroy
+  }
+
+  // revealing module pattern
+  return API;
+})(PIXI);
+
+
 function plot(containerID, familySizes, color, points, optionalParameters) {
   // get the optional parameters
   var geneClicked = function(selection) { },

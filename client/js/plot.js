@@ -5,15 +5,21 @@ var DotPlot = (function (PIXI) {
   // dynamic variables
   var _container,    // html container where the viewer will be drawn
       _data,         // the data the view will be drawn from
+      _minY,         // the minimum genomic position of the y-axis genome
+      _maxY,         // the maximum genomic position of the x-axis genome
+      _lengthY,      // the genomic length spanned by the y-axis
+      _minX,
+      _maxX,
+      _lengthX,
       _familySizes,  // how many genes are in each family
       _color,        // maps families to colors
       _options,      // the optional parameters used throughout the view
       _d,            // width/height of the viewer
       _top,          // top of the plot area
-      _bottom,       // bottom of the plot area
-      _right,        // right of the plot area
-      _left,         // left of the plot area
-      _iframe;       // the hidden iframe used for resizing events
+      _bottom,
+      _right,
+      _left,
+      _iframe;       // the hidden iframe used for auto resizing
 
   // PIXI essentials
   var _renderer,  // the PIXI renderer
@@ -35,6 +41,22 @@ var DotPlot = (function (PIXI) {
   var _computeDimensions = function () {
     _d = _container.clientWidth
     _bottom = _d - (_FONT_SIZE + _TICK + (2 * _PADDING));
+
+    // get the min and max y positions
+    var positionsY = _data.genes.map(function (g) {
+                      return parseInt(g.y);
+                    }).filter(function (y) {
+                      return y >= 0;
+                    });
+    _minY = Math.min.apply(null, positionsY);
+    _maxY = Math.max.apply(null, positionsY);
+    _lengthY = _maxY - _minY;
+
+    // get the min and max x positions
+    var positionsX = _data.genes.map(function (g) { return parseInt(g.x); });
+    _minX = Math.min.apply(null, positionsX);
+    _maxX = Math.max.apply(null, positionsX);
+    _lengthX = _maxX - _minX;
   }
 
 
@@ -77,84 +99,14 @@ var DotPlot = (function (PIXI) {
   }
 
 
-  /** Draws the y-axis of the viewer. */
-  var _drawXAxis = function () {
-    _xAxis = new PIXI.Container();
-
-    // compute the genomic min and max values
-    var positions = _data.genes.map(function (g) { return parseInt(g.x); }),
-        minX = Math.min.apply(null, positions),
-        maxX = Math.max.apply(null, positions);
-
-    // the reference genomic interval
-    var normal = {font : _FONT_SIZE + 'px Arial', align : 'center'},
-        min = new PIXI.Text(minX.toString(), normal),
-        max = new PIXI.Text(maxX.toString(), normal);
-    min.position.x = _left - (min.width /2);
-
-    // the axis label
-    var bold = {font : 'bold ' + _FONT_SIZE + 'px Arial', align : 'center'},
-        label = new PIXI.Text(_data.chromosome_name, bold);
-
-    // helper for positioning the bottom labels
-    var positionLabels = function () {
-      min.position.y = max.position.y = _bottom + (2 * _PADDING);
-      var halfMax = max.width / 2;
-      _right = _d - (halfMax + _PADDING);
-      max.position.x = _right - halfMax;
-      label.position.x = ((_left +_right) /2) - (label.width / 2);
-      label.position.y = _bottom + _PADDING;
-    }
-    positionLabels();
-
-    // helper for drawing the line
-    var drawLine = function () {
-      // the line Graphics
-      var line = new PIXI.Graphics();
-      // where it's located
-      // actually draw the line
-      line.lineStyle(1, 0x000000, 1);
-      line.moveTo(_left, _bottom + _TICK);
-      line.lineTo(_left, _bottom);
-      line.lineTo(_right, _bottom);
-      line.lineTo(_right, _bottom + _TICK);
-      line.endFill();
-      return line;
-    }
-    var line = drawLine();
-    _xAxis.addChild(line);
-
-    // add the labels to the axis
-    _xAxis.addChild(min);
-    _xAxis.addChild(max);
-    _xAxis.addChild(label);
-
-    // how the axis is resized
-    _xAxis.resize = function () {
-      _xAxis.removeChild(line);
-      positionLabels();
-      line.destroy(true);
-      line = drawLine();
-      _xAxis.addChild(line);
-    }
-
-    _stage.addChild(_xAxis);
-  }
-
-
   /** Draws the x-axis of the viewer. */
   var _drawYAxis = function () {
     _yAxis = new PIXI.Container();
 
-    // compute the genomic min and max values
-    var positions = _data.genes.map(function (g) { return parseInt(g.y); }),
-        minY = Math.min.apply(null, positions),
-        maxY = Math.max.apply(null, positions);
-
     // the reference genomic interval
     var normal = {font : _FONT_SIZE + 'px Arial', align : 'right'},
-        max = new PIXI.Text(maxY.toString(), normal),
-        min = new PIXI.Text(minY.toString(), normal);
+        max = new PIXI.Text(_maxY.toString(), normal),
+        min = new PIXI.Text(_minY.toString(), normal);
     _left = Math.max(max.width, min.width) + (_TICK + (2 * _PADDING));
     max.position.x = _left - (max.width + (2 * _PADDING));
     max.position.y = _PADDING;
@@ -209,9 +161,97 @@ var DotPlot = (function (PIXI) {
   }
 
 
+  /** Draws the y-axis of the viewer. */
+  var _drawXAxis = function () {
+    _xAxis = new PIXI.Container();
+
+    // the reference genomic interval
+    var normal = {font : _FONT_SIZE + 'px Arial', align : 'center'},
+        min = new PIXI.Text(_minX.toString(), normal),
+        max = new PIXI.Text(_maxX.toString(), normal);
+    min.position.x = _left - (min.width /2);
+
+    // the axis label
+    var bold = {font : 'bold ' + _FONT_SIZE + 'px Arial', align : 'center'},
+        label = new PIXI.Text(_data.chromosome_name, bold);
+
+    // helper for positioning the bottom labels
+    var positionLabels = function () {
+      min.position.y = max.position.y = _bottom + (2 * _PADDING);
+      var halfMax = max.width / 2;
+      _right = _d - (halfMax + _PADDING);
+      max.position.x = _right - halfMax;
+      label.position.x = ((_left +_right) /2) - (label.width / 2);
+      label.position.y = _bottom + _PADDING;
+    }
+    positionLabels();
+
+    // helper for drawing the line
+    var drawLine = function () {
+      // the line Graphics
+      var line = new PIXI.Graphics();
+      // where it's located
+      // actually draw the line
+      line.lineStyle(1, 0x000000, 1);
+      line.moveTo(_left, _bottom + _TICK);
+      line.lineTo(_left, _bottom);
+      line.lineTo(_right, _bottom);
+      line.lineTo(_right, _bottom + _TICK);
+      line.endFill();
+      return line;
+    }
+    var line = drawLine();
+    _xAxis.addChild(line);
+
+    // add the labels to the axis
+    _xAxis.addChild(min);
+    _xAxis.addChild(max);
+    _xAxis.addChild(label);
+
+    // how the axis is resized
+    _xAxis.resize = function () {
+      _xAxis.removeChild(line);
+      positionLabels();
+      line.destroy(true);
+      line = drawLine();
+      _xAxis.addChild(line);
+    }
+
+    _stage.addChild(_xAxis);
+  }
+
+
   /** Draws the viewer's dot plot. */
   var _drawPoints = function () {
     _plot = new PIXI.Container();
+
+    // compute the scale that will map genomic to plot coordinates
+    var scaleY = (_bottom - _top) / _lengthY,
+        scaleX = (_right - _left) / _lengthX;
+
+    // draw the points
+    var r = 5;
+    for (var i = 0; i < _data.genes.length; i++) {
+      var g = _data.genes[i];
+      if (g.y >= 0) {
+        var p = new PIXI.Graphics(),
+            x = _left + ((_maxX - g.x) * scaleX),
+            y = _bottom - ((_maxY - g.y) * scaleY);
+        p.beginFill(parseInt(_color(g.family).replace(/^#/, ''), 16));
+        p.drawCircle(x, y, r);
+        p.endFill();
+        p.lineStyle(2, 0x000000);
+        p.drawCircle(x, y, r);
+        p.endFill();
+        _plot.addChild(p);
+      }
+    }
+
+    // how the points are resized
+    _yAxis.resize = function () {
+
+    }
+
     _stage.addChild(_plot);
   }
 

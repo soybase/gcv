@@ -808,11 +808,14 @@ contextServices.service('Plot', function ($http, Viewer, UI) {
   // draws a plot
   function draw(element, data, dim) {
     $(element).html('');
-    plot(element.substr(1), familySizes, colors, data, {  // plot.js
-      "geneClicked":  function (gene) { Viewer.geneClickEvent(gene); },
-      "plotClicked": function (trackID) { Viewer.rightAxisClickEvent(trackID); },
-      "width": dim
+    var plot = new DotPlot(element.substr(1), familySizes, colors, data, {
+      //autoResize: true
     });
+    //plot(element.substr(1), familySizes, colors, data, {  // plot.js
+    //  "geneClicked":  function (gene) { Viewer.geneClickEvent(gene); },
+    //  "plotClicked": function (trackID) { Viewer.rightAxisClickEvent(trackID); },
+    //  "width": dim
+    //});
   }
 
   return {

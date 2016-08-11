@@ -806,9 +806,12 @@ contextServices.service('Plot', function ($http, Viewer, UI) {
   }
 
   // draws a plot
+  var plot;
   function draw(element, data, dim) {
     $(element).html('');
-    var plot = new DotPlot(element.substr(1), familySizes, colors, data, {
+    if (plot !== undefined) plot.destroy();
+    plot = new DotPlot(element.substr(1), colors, data, {
+      selectiveColoring: familySizes
       //autoResize: true
     });
     //plot(element.substr(1), familySizes, colors, data, {  // plot.js

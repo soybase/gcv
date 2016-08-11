@@ -11,10 +11,10 @@ var DotPlot = (function (PIXI) {
       _minX,
       _maxX,
       _lengthX,
-      _familySizes,  // how many genes are in each family
       _color,        // maps families to colors
       _options,      // the optional parameters used throughout the view
       _d,            // width/height of the viewer
+      _outliers,     // where genes not in plot are drawn
       _top,          // top of the plot area
       _bottom,
       _right,
@@ -68,15 +68,15 @@ var DotPlot = (function (PIXI) {
     * @param {object} data - The data the viewer will visualize.
     * @param {object} options - Optional parameters.
     */
-  var _init = function (id, familySizes, color, data, options) {
+  var _init = function (id, color, data, options) {
     // parse positional arguments
     _container = document.getElementById(id);
-    _familySizes = familySizes;
     _color = color;
     _data = data;
 
     // initialize dynamic variables
-    _top = _PADDING + (_FONT_SIZE / 2);
+    _outliers = _PADDING + (_FONT_SIZE / 2);
+    _top = _outliers + _PADDING + (1.5 * _FONT_SIZE);
     _computeDimensions();
 
     // parse optional parameters
@@ -84,7 +84,7 @@ var DotPlot = (function (PIXI) {
     _options.geneClick = options.geneClick || function (gene) { };
     _options.plotClick = options.plotClick || function (track) { };
     _options.bruchCallback = options.brushCallback || function (genes) { };
-    _options.selectiveColoring = options.selectiveColoring || false;
+    _options.selectiveColoring = options.selectiveColoring || undefined;
     _options.autoResize = options.autoResize || false;
 
     // prefer WebGL renderer, but fallback to canvas
@@ -105,11 +105,15 @@ var DotPlot = (function (PIXI) {
 
     // the reference genomic interval
     var normal = {font : _FONT_SIZE + 'px Arial', align : 'right'},
+        outliers = new PIXI.Text('Outliers', normal);
         max = new PIXI.Text(_maxY.toString(), normal),
         min = new PIXI.Text(_minY.toString(), normal);
-    _left = Math.max(max.width, min.width) + (_TICK + (2 * _PADDING));
+    _left = Math.max(outliers.width, max.width, min.width);
+    _left += _TICK + (2 * _PADDING);
+    outliers.position.x = _left - (outliers.width + (2 * _PADDING));
+    outliers.position.y = _outliers - (_FONT_SIZE / 2);
     max.position.x = _left - (max.width + (2 * _PADDING));
-    max.position.y = _PADDING;
+    max.position.y = _top - (_FONT_SIZE / 2);
     min.position.x = _left - (min.width + (2 * _PADDING));;
 
     // helper for drawing the line
@@ -144,6 +148,7 @@ var DotPlot = (function (PIXI) {
     positionLabels();
 
     // add the labels to the axis
+    _yAxis.addChild(outliers);
     _yAxis.addChild(min);
     _yAxis.addChild(max);
     _yAxis.addChild(label);
@@ -230,22 +235,26 @@ var DotPlot = (function (PIXI) {
         scaleX = (_right - _left) / _lengthX;
 
     // draw the points
-    var r = 5;
+    var p = new PIXI.Graphics(),
+        r = 5,
+        sc = _options.selectiveColoring;
     for (var i = 0; i < _data.genes.length; i++) {
-      var g = _data.genes[i];
-      if (g.y >= 0) {
-        var p = new PIXI.Graphics(),
-            x = _left + ((_maxX - g.x) * scaleX),
-            y = _bottom - ((_maxY - g.y) * scaleY);
-        p.beginFill(parseInt(_color(g.family).replace(/^#/, ''), 16));
-        p.drawCircle(x, y, r);
-        p.endFill();
-        p.lineStyle(2, 0x000000);
-        p.drawCircle(x, y, r);
-        p.endFill();
-        _plot.addChild(p);
-      }
+      var g = _data.genes[i],
+          x = _left + ((_maxX - g.x) * scaleX),
+          y = (g.y >= 0) ? _bottom - ((_maxY - g.y) * scaleY) : _outliers,
+          c = (function () {
+        if (sc && sc[g.family] > 1) {
+          return parseInt(_color(g.family).replace(/^#/, ''), 16);
+        } return 0xFFFFFF;
+      })();
+      p.beginFill(c);
+      p.drawCircle(x, y, r);
+      p.endFill();
+      p.lineStyle(2, 0x000000);
+      p.drawCircle(x, y, r);
+      p.endFill();
     }
+    _plot.addChild(p);
 
     // how the points are resized
     _yAxis.resize = function () {
@@ -315,9 +324,9 @@ var DotPlot = (function (PIXI) {
 
 
   /** The public api - constructor. */
-  var API = function (id, familySizes, color, data, options) {
+  var API = function (id, color, data, options) {
     // initialize the viewer
-    _init(id, familySizes, color, data, options);
+    _init(id, color, data, options);
     // draw the viewer
     _draw();
     // add a resize listener is desired

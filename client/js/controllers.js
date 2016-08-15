@@ -130,6 +130,7 @@ function($scope, $routeParams, Basic, Viewer, UI) {
       "leftAxisClicked": function() {}
     });
     UI.hideSpinners();
+    UI.hideLeftSlider();
   }
 
   // get data (which triggers redraw)
@@ -243,6 +244,7 @@ function($scope, $routeParams, Search, Viewer, UI) {
       );
     }
     UI.hideSpinners();
+    UI.hideLeftSlider();
   }
 
   // get data (which triggers redraw)

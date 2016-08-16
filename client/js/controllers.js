@@ -173,6 +173,7 @@ function($scope, $routeParams, Basic, Viewer, UI) {
     });
     UI.saveParams(basic.params);
     getData();
+    UI.hideLeftSlider();
   }
 
   // submit parameters form
@@ -286,7 +287,7 @@ function($scope, $routeParams, Search, Viewer, UI) {
         algorithm: assign('algorithm', search.algorithms[0].id),
         match: assign('match', 5),
         mismatch: assign('mismatch', -1),
-        gap: assign('ga[', -1),
+        gap: assign('gap', -1),
         score: assign('score', 25),
         threshold: assign('threshold', 25),
         track_regexp: assign('track_regexp', ""),
@@ -298,6 +299,7 @@ function($scope, $routeParams, Search, Viewer, UI) {
       previous_sources = search.params.sources.slice();
     });
     UI.saveParams(search.params);
+    UI.hidePlot();
     // initialize the search service with the query source and gene
     Search.init($routeParams.source, $routeParams.gene, search.params, getData,
       function(msg) {
@@ -450,7 +452,7 @@ function($scope, Plot, Viewer, Search, UI) {
   });
 
   // draws chooses which plot to draw
-  function localOrGloabl() {
+  function localOrGlobal() {
     if (selectedTrack !== undefined) {
       if (type == 'local') {
         Plot.local(selectedTrack, function() {
@@ -467,7 +469,7 @@ function($scope, Plot, Viewer, Search, UI) {
   // redraw plots when a resize event occurs
   UI.subscribeToResize($scope, function(e) {
     Plot.allLocal();
-    localOrGloabl();
+    localOrGlobal();
   });
 
   // draw a plot what the viewer's plot button is clicked
@@ -475,7 +477,7 @@ function($scope, Plot, Viewer, Search, UI) {
     UI.showPlot();
     UI.showRightSlider();
     selectedTrack = trackID;
-    localOrGloabl();
+    localOrGlobal();
   });
 
   // draw a local plot

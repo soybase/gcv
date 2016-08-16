@@ -4,8 +4,13 @@
 
 (function() {
   var j = localStorage.getItem('lisTourVisited');
-  if(!j || ! JSON.parse(j)["genome-context-viewer"]) {
-    lisTours.go('genome-context-viewer');
+  var TOUR_ID = 'genome-context-viewer';
+  if(!j || ! JSON.parse(j)[TOUR_ID]) {
+    // user has not seen genome-context-viewer tour; check for
+    // conflict with multi-page tours, then start it.
+    if(! lisTours.active()) {
+      lisTours.go(TOUR_ID);
+    }
   }
 
 })();

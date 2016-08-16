@@ -194,7 +194,7 @@
               {{ gene.name }}: {{ gene.fmin }} - {{ gene.fmax }}
               <ul ng-if="gene.family != ''">
                 <li>
-                  Family: <a href="/chado_gene_phylotree_v2/{{ gene.family }}?gene_name='{{ gene.name }}">{{ gene.family }}</a>
+                  Family: <a href="/chado_gene_phylotree_v2/{{ gene.family }}?gene_name={{ gene.name }}">{{ gene.family }}</a>
                 </li>
               </ul>
             </li>
@@ -269,8 +269,7 @@
   <script src="js/services.js"></script>
   <script src="js/controllers.js"></script>
   <script src="js/app.js"></script>
-  <!-- hopscotch -->
-  <script src="js/hopscotch.js"></script>
-  <script src="js/demotour.js"></script>
+  <!-- bootstrap-tour -->
+  <script src="/sites/all/modules/lis_tours/build/bundle.js"></script>
 </body>
 </html>

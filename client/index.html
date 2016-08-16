@@ -75,7 +75,7 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
           <ul class="nav navbar-nav tabs" ng-show="nav.ui.sliders">
             <li><button id="parambtn" type="button" class="btn btn-default navbar-btn" ng-click="nav.ui.showParameters()">Parameters</button></li>
-            <li><button id="helpbtn" class="btn btn-default navbar-btn" onclick="lisTours.go('genome-context-viewer')" ng-click="nav.ui.clearHelp()">Help</button></li>
+            <li><button id="helpbtn" class="btn btn-default navbar-btn" onclick="lisTours.go('genome-context-viewer-help')" ng-click="nav.ui.clearHelp()">Help</button></li>
             <li><a id="viewer-button" href="#viewer">Viewer</a></li>
             <li ng-show="nav.plots"><a href="#plots">Dot Plots</a></li>
           </ul>
@@ -270,6 +270,5 @@
   <script src="js/app.js"></script>
   <!-- bootstrap-tour -->
   <script src="/sites/all/modules/lis_tours/build/bundle.js"></script>
-  <script src="js/demotour.js"></script>
 </body>
 </html>

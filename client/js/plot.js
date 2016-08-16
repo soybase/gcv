@@ -1,350 +1,285 @@
-var DotPlot = (function (PIXI) {
+/**
+  * The Genome Context Viewer module.
+  * @param {object} PIXI - GCV depends on Pixi.js.
+  */
+var GCV = (function (PIXI) {
 
   /* private */
 
-  // dynamic variables
-  var _container,    // html container where the viewer will be drawn
-      _data,         // the data the view will be drawn from
-      _minY,         // the minimum genomic position of the y-axis genome
-      _maxY,         // the maximum genomic position of the x-axis genome
-      _lengthY,      // the genomic length spanned by the y-axis
-      _minX,
-      _maxX,
-      _lengthX,
-      _color,        // maps families to colors
-      _options,      // the optional parameters used throughout the view
-      _d,            // width/height of the viewer
-      _outliers,     // where genes not in plot are drawn
-      _top,          // top of the plot area
-      _bottom,
-      _right,
-      _left,
-      _iframe;       // the hidden iframe used for auto resizing
+  // variables
+  var _active = PIXI.autoDetectRenderer(1, 1, {   // renders the active element
+        antialias: true,
+        transparent: true
+      }),
+      _queue = [],                                // elements that need updating
+      _passive = PIXI.autoDetectRenderer(1, 1, {  // renders the update queue
+        antialias: true,
+        transparent: true,
+        preserveDrawingVector: true
+      });
 
-  // PIXI essentials
-  var _renderer,  // the PIXI renderer
-      _stage;     // the PIXI stage where the viewer is drawn
-
-  // viewer components
-  var _xAxis,
-      _yAxis,
-      _plot;
-
-  // constant variables
-  var _PADDING = 3,
-      _FADE    = 0.15,
-      _FONT_SIZE = 12,
-      _TICK = _FONT_SIZE / 2;
-
-
-  /** Computes the dimensions of the viewer. */
-  var _computeDimensions = function () {
-    _d = _container.clientWidth
-    _bottom = _d - (_FONT_SIZE + _TICK + (2 * _PADDING));
-
-    // get the min and max y positions
-    var positionsY = _data.genes.map(function (g) {
-                      return parseInt(g.y);
-                    }).filter(function (y) {
-                      return y >= 0;
-                    });
-    _minY = Math.min.apply(null, positionsY);
-    _maxY = Math.max.apply(null, positionsY);
-    _lengthY = _maxY - _minY;
-
-    // get the min and max x positions
-    var positionsX = _data.genes.map(function (g) { return parseInt(g.x); });
-    _minX = Math.min.apply(null, positionsX);
-    _maxX = Math.max.apply(null, positionsX);
-    _lengthX = _maxX - _minX;
+  /** The passive render loop. */
+  var _animate = function () {
+    if (_queue.length > 0) {
+      // get the next stage to be drawn
+      var stage = _queue.shift();
+      // adjust size of renderer
+      var d = Math.max(stage.element.clientWidth, stage.element.clientHeight);
+      _passive.resize(d, d);
+      _passive.render(stage);
+      // update the image source
+      stage.img.src = _passive.view.toDataURL();
+    }
+    requestAnimationFrame(_animate);
   }
+  _animate();
 
+  /* protected */
 
   /**
-    * Parses parameters and initializes variables.
-    * @param {string} id - ID of element viewer will be drawn in.
-    * @param {object} familySizes - Maps families to their member counts.
-    * @param {object} color - Maps families to colors.
-    * @param {object} data - The data the viewer will visualize.
+    * Adds a PIXI stage.
+    * @param {object} stage - The stage to be added.
+    */
+  var _add = function (stage) {
+    // create the stage's image element
+    stage.img = document.createElement('img');
+    stage.element.appendChild(stage.img);
+    _queue.push(stage);
+    // add active animation toggle
+    stage.animate = function () {
+      stage.animationFrame = requestAnimationFrame(stage.animate);
+      _active.render(stage);
+    }
+    stage.element.onmouseover = function (e) {
+      if (e.target == stage.img) {
+        this.removeChild(stage.img);
+        var d = Math.max(this.clientWidth, this.clientHeight);
+        _active.resize(d, d);
+        stage.animate();
+        this.appendChild(_active.view);
+      }
+    }
+    stage.element.onmouseout = function (e) {
+      if (_active.view.parentNode == this) {
+        cancelAnimationFrame(stage.animationFrame);
+        this.removeChild(_active.view);
+        stage.img.src = _active.view.toDataURL();
+        _queue.push(stage);
+        this.appendChild(stage.img);
+      }
+    }
+  }
+  var _protected = {add: _add};
+
+  /** GCV public interface. */
+  return {
+    DotPlot: _protected
+  }
+})(PIXI);
+
+
+/* sub-modules */
+
+GCV.DotPlot = (function (GCV, PIXI) {
+
+  /* private */
+
+  // variables
+  var _d,          // the dimension of the container
+      _data,       // the data to be drawn
+      _minY,       // minimum genomic position of y-axis data
+      _maxY,       // maximum genomic position of y-axis data
+      _minX,
+      _maxX,
+      _options,    // optional parameters
+      _stage,      // PIXI stage where everything is drawn
+      _left,       // left side of area where dots are plotted
+      _right,
+      _bottom;
+
+  // constants
+  var _PADDING        = 3,
+      _DOUBLE_PADDING = 2 * _PADDING;
+      _FADE           = 0.15,
+      _FONT_SIZE      = 12,
+      _HALF_FONT      = _FONT_SIZE / 2,
+      _OUTLIERS       = _PADDING + _HALF_FONT,
+      _TOP            = _OUTLIERS + _PADDING + + _HALF_FONT + _FONT_SIZE;
+
+  /**
+    * Initialization function.
+    * @param {string} id - The ID of the plot's parent element.
+    * @param {object} data - The data to be plotted.
     * @param {object} options - Optional parameters.
     */
-  var _init = function (id, color, data, options) {
-    // parse positional arguments
-    _container = document.getElementById(id);
-    _color = color;
+  var _init = function (id, data, options) {
+    // initialize the stage
+    _stage = new PIXI.Container();
+    // get the container
+    _stage.element = document.getElementById(id);
+    _d = _stage.element.clientWidth;
+    _bottom = _d - (_FONT_SIZE + _HALF_FONT + (2 * _PADDING));
+    // parse the data
     _data = data;
-
-    // initialize dynamic variables
-    _outliers = _PADDING + (_FONT_SIZE / 2);
-    _top = _outliers + _PADDING + (1.5 * _FONT_SIZE);
-    _computeDimensions();
-
+    var yPositions = data.genes.map(function (g) {
+          return parseInt(g.y);
+        }).filter(function (y) {
+          return y >= 0;
+        });
+    _minY = Math.min.apply(null, yPositions);
+    _maxY = Math.max.apply(null, yPositions);
+    var xPositions = data.genes.map(function (g) {
+          return parseInt(g.x);
+        });
+    _minX = Math.min.apply(null, xPositions);
+    _maxX = Math.max.apply(null, xPositions);
     // parse optional parameters
     _options = options || {};
-    _options.geneClick = options.geneClick || function (gene) { };
-    _options.plotClick = options.plotClick || function (track) { };
-    _options.bruchCallback = options.brushCallback || function (genes) { };
-    _options.selectiveColoring = options.selectiveColoring || undefined;
-    _options.autoResize = options.autoResize || false;
-
-    // prefer WebGL renderer, but fallback to canvas
-    var args = {antialias: true, transparent: true};
-    _renderer = PIXI.autoDetectRenderer(_d, _d, args);
-
-    // add the renderer drawing element to the dom
-    _container.appendChild(_renderer.view);
-
-    // create the root container of the scene graph
-    _stage = new PIXI.Container();
+    _options.geneClick = _options.geneClick || function (gene) { };
+    _options.plotClick = _options.plotClick || function (track) { };
+    _options.bruchCallback = _options.brushCallback || function (genes) { };
+    _options.selectiveColoring = _options.selectiveColoring || undefined;
+    _options.autoResize = _options.autoResize || false;
   }
 
-
-  /** Draws the x-axis of the viewer. */
-  var _drawYAxis = function () {
-    _yAxis = new PIXI.Container();
-
-    // the reference genomic interval
+  /** Draws the y-axis. */
+  var _yAxis = function () {
+    // axis text
     var normal = {font : _FONT_SIZE + 'px Arial', align : 'right'},
         outliers = new PIXI.Text('Outliers', normal);
         max = new PIXI.Text(_maxY.toString(), normal),
         min = new PIXI.Text(_minY.toString(), normal);
-    _left = Math.max(outliers.width, max.width, min.width);
-    _left += _TICK + (2 * _PADDING);
-    outliers.position.x = _left - (outliers.width + (2 * _PADDING));
-    outliers.position.y = _outliers - (_FONT_SIZE / 2);
-    max.position.x = _left - (max.width + (2 * _PADDING));
-    max.position.y = _top - (_FONT_SIZE / 2);
-    min.position.x = _left - (min.width + (2 * _PADDING));;
-
-    // helper for drawing the line
-    var drawLine = function () {
-      // the line Graphics
-      var line = new PIXI.Graphics();
-      // where it's located
-      line.position.x = _left - _TICK;
-      // actually draw the line
-      line.lineStyle(1, 0x000000, 1);
-      line.moveTo(0, _top);
-      line.lineTo(_TICK, _top);
-      line.lineTo(_TICK, _bottom);
-      line.lineTo(0, _bottom);
-      line.endFill();
-      return line;
-    }
-    var line = drawLine();
-    _yAxis.addChild(line);
-
-    // the axis label
+    _left = Math.max(outliers.width, max.width, min.width) +
+            _HALF_FONT + _DOUBLE_PADDING;
+    var textLeft = _left - _DOUBLE_PADDING;
+    outliers.position.x = textLeft - outliers.width;
+    outliers.position.y = _OUTLIERS - _HALF_FONT;
+    max.position.x = textLeft - max.width;
+    max.position.y = _TOP - _HALF_FONT;
+    min.position.x = textLeft - min.width;
+    min.position.y = _bottom - _HALF_FONT;
     var bold = {font : 'bold ' + _FONT_SIZE + 'px Arial', align : 'center'},
         label = new PIXI.Text(_data.reference, bold);
     label.rotation = -90 * (Math.PI / 180);
     label.position.x = _left - (_FONT_SIZE + _PADDING);
-
-    // helper for positioning the bottom labels
-    var positionLabels = function () {
-      min.position.y = _bottom - (_FONT_SIZE / 2);
-      label.position.y = ((_top + _bottom) / 2) + (label.width / 2);
-    }
-    positionLabels();
-
-    // add the labels to the axis
-    _yAxis.addChild(outliers);
-    _yAxis.addChild(min);
-    _yAxis.addChild(max);
-    _yAxis.addChild(label);
-
-    // how the axis is resized
-    _yAxis.resize = function () {
-      _yAxis.removeChild(line);
-      line.destroy(true);
-      line = drawLine();
-      _yAxis.addChild(line);
-      positionLabels();
-    }
-
-    _stage.addChild(_yAxis);
+    label.position.y = ((_TOP + _bottom) / 2) + (label.width / 2);
+    // axis line
+    var line = new PIXI.Graphics();
+    line.position.x = _left - _HALF_FONT;
+    line.lineStyle(1, 0x000000, 1);
+    line.moveTo(0, _TOP);
+    line.lineTo(_HALF_FONT, _TOP);
+    line.lineTo(_HALF_FONT, _bottom);
+    line.lineTo(0, _bottom);
+    line.endFill();
+    // piece it together
+    var axis = new PIXI.Container();
+    axis.addChild(outliers);
+    axis.addChild(max);
+    axis.addChild(min);
+    axis.addChild(label);
+    axis.addChild(line);
+    // add the axis to the stage
+    _stage.addChild(axis);
   }
 
-
-  /** Draws the y-axis of the viewer. */
-  var _drawXAxis = function () {
-    _xAxis = new PIXI.Container();
-
-    // the reference genomic interval
+  /** Draws the x-axis. */
+  var _xAxis = function () {
+    // axis text
     var normal = {font : _FONT_SIZE + 'px Arial', align : 'center'},
         min = new PIXI.Text(_minX.toString(), normal),
         max = new PIXI.Text(_maxX.toString(), normal);
     min.position.x = _left - (min.width /2);
-
-    // the axis label
+    min.position.y = max.position.y = _bottom + _DOUBLE_PADDING;
+    var halfMax = max.width / 2;
+    _right = _d - (halfMax + _PADDING);
+    max.position.x = _right - halfMax;
     var bold = {font : 'bold ' + _FONT_SIZE + 'px Arial', align : 'center'},
         label = new PIXI.Text(_data.chromosome_name, bold);
-
-    // helper for positioning the bottom labels
-    var positionLabels = function () {
-      min.position.y = max.position.y = _bottom + (2 * _PADDING);
-      var halfMax = max.width / 2;
-      _right = _d - (halfMax + _PADDING);
-      max.position.x = _right - halfMax;
-      label.position.x = ((_left +_right) /2) - (label.width / 2);
-      label.position.y = _bottom + _PADDING;
-    }
-    positionLabels();
-
-    // helper for drawing the line
-    var drawLine = function () {
-      // the line Graphics
-      var line = new PIXI.Graphics();
-      // where it's located
-      // actually draw the line
-      line.lineStyle(1, 0x000000, 1);
-      line.moveTo(_left, _bottom + _TICK);
-      line.lineTo(_left, _bottom);
-      line.lineTo(_right, _bottom);
-      line.lineTo(_right, _bottom + _TICK);
-      line.endFill();
-      return line;
-    }
-    var line = drawLine();
-    _xAxis.addChild(line);
-
-    // add the labels to the axis
-    _xAxis.addChild(min);
-    _xAxis.addChild(max);
-    _xAxis.addChild(label);
-
-    // how the axis is resized
-    _xAxis.resize = function () {
-      _xAxis.removeChild(line);
-      positionLabels();
-      line.destroy(true);
-      line = drawLine();
-      _xAxis.addChild(line);
-    }
-
-    _stage.addChild(_xAxis);
+    label.position.x = ((_left + _right) /2) - (label.width / 2);
+    label.position.y = _bottom + _PADDING;
+    // axis line
+    var line = new PIXI.Graphics();
+    line.lineStyle(1, 0x000000, 1);
+    line.moveTo(_left, _bottom + _HALF_FONT);
+    line.lineTo(_left, _bottom);
+    line.lineTo(_right, _bottom);
+    line.lineTo(_right, _bottom + _HALF_FONT);
+    line.endFill();
+    // piece it all together
+    var axis = new PIXI.Container();
+    axis.addChild(min);
+    axis.addChild(max);
+    axis.addChild(label);
+    axis.addChild(line);
+    // add the axis to the stage
+    _stage.addChild(axis);
   }
 
-
-  /** Draws the viewer's dot plot. */
-  var _drawPoints = function () {
-    _plot = new PIXI.Container();
-
-    // compute the scale that will map genomic to plot coordinates
-    var scaleY = (_bottom - _top) / _lengthY,
-        scaleX = (_right - _left) / _lengthX;
-
-    // draw the points
-    var p = new PIXI.Graphics(),
+  /** Draws the points. */
+  var _points = function () {
+    // compute how the points will be mapped from genomic coordinates
+    var points = new PIXI.Container(),
+        scaleY = (_bottom - _TOP) / (_maxY - _minY),
+        scaleX = (_right - _left) / (_maxX - _minX),
         r = 5,
         sc = _options.selectiveColoring;
+    // draw the points
     for (var i = 0; i < _data.genes.length; i++) {
-      var g = _data.genes[i],
-          x = _left + ((_maxX - g.x) * scaleX),
-          y = (g.y >= 0) ? _bottom - ((_maxY - g.y) * scaleY) : _outliers,
-          c = (function () {
-        if (sc && sc[g.family] > 1) {
-          return parseInt(_color(g.family).replace(/^#/, ''), 16);
-        } return 0xFFFFFF;
-      })();
+      var p = new PIXI.Graphics();
+      p.data = _data.genes[i];
+      var x = _left + ((_maxX - p.data.x) * scaleX),
+          y = (p.data.y >= 0) ?
+              _bottom - ((_maxY - p.data.y) * scaleY) :
+              _OUTLIERS,
+          c = (sc && sc[p.data.family] > 1) ?
+              parseInt(contextColors(p.data.family).replace(/^#/, ''), 16) :
+              0xFFFFFF;
       p.beginFill(c);
       p.drawCircle(x, y, r);
       p.endFill();
       p.lineStyle(2, 0x000000);
       p.drawCircle(x, y, r);
       p.endFill();
+      p.interactive = true;
+      p.on('mousedown', function () { console.log(this.data); });
+      points.addChild(p);
     }
-    _plot.addChild(p);
-
-    // how the points are resized
-    _yAxis.resize = function () {
-
-    }
-
-    _stage.addChild(_plot);
+    // add the points to the stage
+    _stage.addChild(points);
   }
-
-
-  /** Draws the dot plot viewer. */
-  var _draw = function () {
-    // y-axis
-    _drawYAxis();
-    // x-axis
-    _drawXAxis();
-    // points
-    _drawPoints();
-
-    // run the render loop
-    var animate = function () {
-      _renderer.render(_stage);
-      requestAnimationFrame(animate);
-    }
-    animate();
-  }
-
-
-  /** Adds width resize listener to the viewer's container. */
-  var _addResizeListener = function () {
-    // helper function that resizes everything
-    var resize = function() {
-      // resize the renderer
-      _d = _container.clientWidth;
-      _renderer.resize(_d, _d);
-    }
-
-    // create hidden iframe to trigger resize events
-    _iframe = document.createElement('IFRAME');
-    _iframe.setAttribute('allowtransparency', true);
-    _iframe.style.width = '100%';
-    _iframe.style.height = '0';
-    _iframe.style.position = 'absolute';
-    _iframe.style.border = 'none';
-    _iframe.style.backgroundColor = 'transparent';
-    _container.appendChild(_iframe);
-    _iframe.contentWindow.onresize = function (event) {
-      resize();
-    }
-
-    // resize once just in case a scroll bar appeared
-    resize();
-  }
-
 
   /* public */
 
-
-  /** Frees the PIXI stage and renderer from GPU memory. */
+  /** Destroys the dot plot. */
   var destroy = function () {
-    _stage.destroy(true);
-    _renderer.destroy(true);
-    if (_options.autoResize) {
-      _iframe.remove();
-    }
+    _stage.element.removeChild(_stage.img);
+    _stage.destroy();
   }
 
-
-  /** The public api - constructor. */
-  var API = function (id, color, data, options) {
-    // initialize the viewer
-    _init(id, color, data, options);
-    // draw the viewer
-    _draw();
-    // add a resize listener is desired
-    if (_options.autoResize) {
-      _addResizeListener();
-    }
+  /**
+    * Constructor.
+    * @param {string} id - ID of the container where the plot is to be drawn.
+    * @param {object} data - The data to be plotted.
+    * @param {object} options - Optional parameters.
+    */
+  var DotPlot = function (id, data, options) {
+    _init(id, data, options);
+    // ORDER MATTERS!
+    _yAxis();
+    _xAxis();
+    _points();
+    // draw it!
+    GCV.add(_stage);
   }
 
-
-  /** The public api - prototype. */
-  API.prototype = {
+  /** DotPlot public interface. */
+  DotPlot.prototype = {
     constructor: DotPlot,
     destroy: destroy
   }
-
-  // revealing module pattern
-  return API;
-})(PIXI);
+  return DotPlot;
+})(GCV.DotPlot, PIXI);
 
 
 function plot(containerID, familySizes, color, points, optionalParameters) {

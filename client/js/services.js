@@ -728,7 +728,7 @@ contextServices.service('Synteny', function ($http, $q, $rootScope, Viewer) {
       if (data !== undefined) {
         document.getElementById(ELEMENT).innerHTML = '';
         if (viewer) viewer.destroy();
-        viewer = new Synteny(ELEMENT, data, viewArgs);
+        //viewer = new Synteny(ELEMENT, data, viewArgs);
       }
     }
   };
@@ -806,11 +806,11 @@ contextServices.service('Plot', function ($http, Viewer, UI) {
   }
 
   // draws a plot
-  var plot;
+  var plots = {};
   function draw(element, data, dim) {
-    $(element).html('');
-    if (plot !== undefined) plot.destroy();
-    plot = new DotPlot(element.substr(1), colors, data, {
+    //$(element).html('');
+    if (plots.hasOwnProperty(element)) plots[element].destroy();
+    plots[element] = new GCV.DotPlot(element.substr(1), data, {
       selectiveColoring: familySizes
       //autoResize: true
     });

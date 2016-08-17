@@ -809,6 +809,7 @@ contextServices.service('Plot', function ($http, Viewer, UI) {
   var plots = {};
   function draw(element, data, dim) {
     //$(element).html('');
+    console.log(element);
     if (plots.hasOwnProperty(element)) plots[element].destroy();
     plots[element] = new GCV.DotPlot(element.substr(1), data, {
       selectiveColoring: familySizes

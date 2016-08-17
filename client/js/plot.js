@@ -34,6 +34,17 @@ var GCV = (function (PIXI) {
   }
   _animate();
 
+  /**
+    * Stops an animation loop.
+    * @param {object} stage - The stage of the animation loop to be stopped.
+    */
+  var _stopAnimation = function (stage) {
+    if (stage.animationFrame !== undefined) {
+      cancelAnimationFrame(stage.animationFrame);
+      stage.animationFrame = undefined;
+    }
+  }
+
   /* protected */
 
   /**
@@ -60,16 +71,47 @@ var GCV = (function (PIXI) {
       }
     }
     stage.element.onmouseout = function (e) {
+      _stopAnimation(stage);
       if (_active.view.parentNode == this) {
-        cancelAnimationFrame(stage.animationFrame);
         this.removeChild(_active.view);
         stage.img.src = _active.view.toDataURL();
         _queue.push(stage);
         this.appendChild(stage.img);
       }
     }
+    // add the hidden iframe for resize events
+    stage.iframe = document.createElement('iframe');
+    stage.iframe.setAttribute('allowtransparency', true);
+    stage.iframe.style.width = '100%';
+    stage.iframe.style.height = '0';
+    stage.iframe.style.position = 'absolute';
+    stage.iframe.style.border = 'none';
+    stage.iframe.style.backgroundColor = 'transparent';
+    stage.element.appendChild(stage.iframe);
+    stage.iframe.contentWindow.onresize = function (e) {
+      clearTimeout(stage.timer);
+      stage.timer = setTimeout(function () {
+        //stage.resize();
+        //_queue.push(stage);
+      }, 100);
+    }
   }
-  var _protected = {add: _add};
+  /**
+    * Removes a PIXI stage.
+    * @param {object} stage - The stage to be removed.
+    */
+  var _remove = function (stage) {
+    _stopAnimation(stage);
+    console.log('img: ' + stage.img);
+    console.log('iframe: ' + stage.iframe);
+    stage.img.remove();
+    stage.iframe.remove();
+    console.log(stage.element.children);
+    stage.element.onmouseover = function () { };
+    stage.element.onmouseout = function () { };
+    stage.img = stage.iframe = stage.element = undefined;
+  }
+  var _protected = {add: _add, remove: _remove};
 
   /** GCV public interface. */
   return {
@@ -80,22 +122,16 @@ var GCV = (function (PIXI) {
 
 /* sub-modules */
 
-GCV.DotPlot = (function (GCV, PIXI) {
+
+/**
+  * Constructor.
+  * @param {string} id - ID of the container where the plot is to be drawn.
+  * @param {object} data - The data to be plotted.
+  * @param {object} options - Optional parameters.
+  */
+GCV.DotPlot = function (GCV, PIXI, id, data, options) {
 
   /* private */
-
-  // variables
-  var _d,          // the dimension of the container
-      _data,       // the data to be drawn
-      _minY,       // minimum genomic position of y-axis data
-      _maxY,       // maximum genomic position of y-axis data
-      _minX,
-      _maxX,
-      _options,    // optional parameters
-      _stage,      // PIXI stage where everything is drawn
-      _left,       // left side of area where dots are plotted
-      _right,
-      _bottom;
 
   // constants
   var _PADDING        = 3,
@@ -106,41 +142,36 @@ GCV.DotPlot = (function (GCV, PIXI) {
       _OUTLIERS       = _PADDING + _HALF_FONT,
       _TOP            = _OUTLIERS + _PADDING + + _HALF_FONT + _FONT_SIZE;
 
-  /**
-    * Initialization function.
-    * @param {string} id - The ID of the plot's parent element.
-    * @param {object} data - The data to be plotted.
-    * @param {object} options - Optional parameters.
-    */
-  var _init = function (id, data, options) {
-    // initialize the stage
-    _stage = new PIXI.Container();
-    // get the container
-    _stage.element = document.getElementById(id);
-    _d = _stage.element.clientWidth;
-    _bottom = _d - (_FONT_SIZE + _HALF_FONT + (2 * _PADDING));
-    // parse the data
-    _data = data;
-    var yPositions = data.genes.map(function (g) {
+  // the PIXI stage
+  var _stage = new PIXI.Container();
+  _stage.element = document.getElementById(id);
+
+  // global variables
+  var _d = _stage.element.clientWidth,
+      _bottom = _d - (_FONT_SIZE + _HALF_FONT + (2 * _PADDING)),
+      _data = data,
+      yPositions = data.genes.map(function (g) {
           return parseInt(g.y);
         }).filter(function (y) {
           return y >= 0;
-        });
-    _minY = Math.min.apply(null, yPositions);
-    _maxY = Math.max.apply(null, yPositions);
-    var xPositions = data.genes.map(function (g) {
+        }),
+      _minY = Math.min.apply(null, yPositions),
+      _maxY = Math.max.apply(null, yPositions),
+      xPositions = data.genes.map(function (g) {
           return parseInt(g.x);
-        });
-    _minX = Math.min.apply(null, xPositions);
-    _maxX = Math.max.apply(null, xPositions);
-    // parse optional parameters
-    _options = options || {};
-    _options.geneClick = _options.geneClick || function (gene) { };
-    _options.plotClick = _options.plotClick || function (track) { };
-    _options.bruchCallback = _options.brushCallback || function (genes) { };
-    _options.selectiveColoring = _options.selectiveColoring || undefined;
-    _options.autoResize = _options.autoResize || false;
-  }
+        }),
+      _minX = Math.min.apply(null, xPositions),
+      _maxX = Math.max.apply(null, xPositions),
+      _left = null,
+      _right = null;
+
+  // parse optional parameters
+  var _options = options || {};
+  _options.geneClick = _options.geneClick || function (gene) { };
+  _options.plotClick = _options.plotClick || function (track) { };
+  _options.bruchCallback = _options.brushCallback || function (genes) { };
+  _options.selectiveColoring = _options.selectiveColoring || undefined;
+  _options.autoResize = _options.autoResize || false;
 
   /** Draws the y-axis. */
   var _yAxis = function () {
@@ -181,7 +212,7 @@ GCV.DotPlot = (function (GCV, PIXI) {
     axis.addChild(line);
     // add the axis to the stage
     _stage.addChild(axis);
-  }
+  };
 
   /** Draws the x-axis. */
   var _xAxis = function () {
@@ -214,7 +245,7 @@ GCV.DotPlot = (function (GCV, PIXI) {
     axis.addChild(line);
     // add the axis to the stage
     _stage.addChild(axis);
-  }
+  };
 
   /** Draws the points. */
   var _points = function () {
@@ -242,44 +273,33 @@ GCV.DotPlot = (function (GCV, PIXI) {
       p.drawCircle(x, y, r);
       p.endFill();
       p.interactive = true;
-      p.on('mousedown', function () { console.log(this.data); });
+      p.on('mousedown', function () { console.log(_data); });
       points.addChild(p);
     }
     // add the points to the stage
     _stage.addChild(points);
-  }
+  };
+
+  // Draw the view - ORDER MATTERS!
+  _yAxis();
+  _xAxis();
+  _points();
+  GCV.add(_stage);
 
   /* public */
 
   /** Destroys the dot plot. */
   var destroy = function () {
-    _stage.element.removeChild(_stage.img);
+    GCV.remove(_stage);
     _stage.destroy();
-  }
-
-  /**
-    * Constructor.
-    * @param {string} id - ID of the container where the plot is to be drawn.
-    * @param {object} data - The data to be plotted.
-    * @param {object} options - Optional parameters.
-    */
-  var DotPlot = function (id, data, options) {
-    _init(id, data, options);
-    // ORDER MATTERS!
-    _yAxis();
-    _xAxis();
-    _points();
-    // draw it!
-    GCV.add(_stage);
-  }
+    _stage = undefined;
+  };
 
   /** DotPlot public interface. */
-  DotPlot.prototype = {
-    constructor: DotPlot,
+  return {
     destroy: destroy
   }
-  return DotPlot;
-})(GCV.DotPlot, PIXI);
+}.bind(null, GCV.DotPlot, PIXI);
 
 
 function plot(containerID, familySizes, color, points, optionalParameters) {

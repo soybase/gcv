@@ -61,22 +61,21 @@ var GCV = (function (PIXI) {
       stage.animationFrame = requestAnimationFrame(stage.animate);
       _active.render(stage);
     }
-    stage.element.onmouseover = function (e) {
-      if (e.target == stage.img) {
-        this.removeChild(stage.img);
-        var d = Math.max(this.clientWidth, this.clientHeight);
-        _active.resize(d, d);
-        stage.animate();
-        this.appendChild(_active.view);
-      }
-    }
-    stage.element.onmouseout = function (e) {
-      _stopAnimation(stage);
-      if (_active.view.parentNode == this) {
-        this.removeChild(_active.view);
-        stage.img.src = _active.view.toDataURL();
+    stage.img.onmouseover = function (e) {
+      // actively animate the stage
+      stage.element.removeChild(this);
+      var d = Math.max(stage.element.clientWidth, stage.element.clientHeight);
+      _active.resize(d, d);
+      stage.animate();
+      stage.element.appendChild(_active.view);
+      // replace the animation with an image when the mouse leaves the stage
+      _active.view.onmouseout = function (e) {
+        _stopAnimation(stage);
+        stage.element.removeChild(_active.view);
+        //stage.img.src = _active.view.toDataURL();
         _queue.push(stage);
-        this.appendChild(stage.img);
+        stage.element.appendChild(stage.img);
+        _active.view.onmouseout = function (e) { };
       }
     }
     // add the hidden iframe for resize events
@@ -91,8 +90,8 @@ var GCV = (function (PIXI) {
     stage.iframe.contentWindow.onresize = function (e) {
       clearTimeout(stage.timer);
       stage.timer = setTimeout(function () {
-        //stage.resize();
-        //_queue.push(stage);
+        stage.resize();
+        _queue.push(stage);
       }, 100);
     }
   }
@@ -102,11 +101,8 @@ var GCV = (function (PIXI) {
     */
   var _remove = function (stage) {
     _stopAnimation(stage);
-    console.log('img: ' + stage.img);
-    console.log('iframe: ' + stage.iframe);
     stage.img.remove();
     stage.iframe.remove();
-    console.log(stage.element.children);
     stage.element.onmouseover = function () { };
     stage.element.onmouseout = function () { };
     stage.img = stage.iframe = stage.element = undefined;
@@ -143,13 +139,17 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
       _TOP            = _OUTLIERS + _PADDING + + _HALF_FONT + _FONT_SIZE;
 
   // the PIXI stage
-  var _stage = new PIXI.Container();
+  var _stage = new PIXI.Container(),
+      _d,
+      _bottom;
   _stage.element = document.getElementById(id);
+  _stage.resize = function () {
+    _d = _stage.element.clientWidth;
+    _bottom = _d - (_FONT_SIZE + _HALF_FONT + (2 * _PADDING));
+  }
 
   // global variables
-  var _d = _stage.element.clientWidth,
-      _bottom = _d - (_FONT_SIZE + _HALF_FONT + (2 * _PADDING)),
-      _data = data,
+  var _data = data,
       yPositions = data.genes.map(function (g) {
           return parseInt(g.y);
         }).filter(function (y) {
@@ -177,7 +177,7 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
   var _yAxis = function () {
     // axis text
     var normal = {font : _FONT_SIZE + 'px Arial', align : 'right'},
-        outliers = new PIXI.Text('Outliers', normal);
+        outliers = new PIXI.Text('Outliers', normal),
         max = new PIXI.Text(_maxY.toString(), normal),
         min = new PIXI.Text(_minY.toString(), normal);
     _left = Math.max(outliers.width, max.width, min.width) +
@@ -188,21 +188,24 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
     max.position.x = textLeft - max.width;
     max.position.y = _TOP - _HALF_FONT;
     min.position.x = textLeft - min.width;
-    min.position.y = _bottom - _HALF_FONT;
     var bold = {font : 'bold ' + _FONT_SIZE + 'px Arial', align : 'center'},
         label = new PIXI.Text(_data.reference, bold);
     label.rotation = -90 * (Math.PI / 180);
     label.position.x = _left - (_FONT_SIZE + _PADDING);
-    label.position.y = ((_TOP + _bottom) / 2) + (label.width / 2);
     // axis line
     var line = new PIXI.Graphics();
-    line.position.x = _left - _HALF_FONT;
-    line.lineStyle(1, 0x000000, 1);
-    line.moveTo(0, _TOP);
-    line.lineTo(_HALF_FONT, _TOP);
-    line.lineTo(_HALF_FONT, _bottom);
-    line.lineTo(0, _bottom);
-    line.endFill();
+    var position = function () {
+      min.position.y = _bottom - _HALF_FONT;
+      label.position.y = ((_TOP + _bottom) / 2) + (label.width / 2);
+      line.clear();
+      line.position.x = _left - _HALF_FONT;
+      line.lineStyle(1, 0x000000, 1);
+      line.moveTo(0, _TOP);
+      line.lineTo(_HALF_FONT, _TOP);
+      line.lineTo(_HALF_FONT, _bottom);
+      line.lineTo(0, _bottom);
+      line.endFill();
+    }
     // piece it together
     var axis = new PIXI.Container();
     axis.addChild(outliers);
@@ -212,6 +215,11 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
     axis.addChild(line);
     // add the axis to the stage
     _stage.addChild(axis);
+    // decorate the resize function
+    _stage.resize = function(resize) {
+      resize();
+      position();
+    }.bind(null, _stage.resize);
   };
 
   /** Draws the x-axis. */
@@ -221,22 +229,26 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
         min = new PIXI.Text(_minX.toString(), normal),
         max = new PIXI.Text(_maxX.toString(), normal);
     min.position.x = _left - (min.width /2);
-    min.position.y = max.position.y = _bottom + _DOUBLE_PADDING;
     var halfMax = max.width / 2;
-    _right = _d - (halfMax + _PADDING);
-    max.position.x = _right - halfMax;
     var bold = {font : 'bold ' + _FONT_SIZE + 'px Arial', align : 'center'},
         label = new PIXI.Text(_data.chromosome_name, bold);
-    label.position.x = ((_left + _right) /2) - (label.width / 2);
-    label.position.y = _bottom + _PADDING;
     // axis line
     var line = new PIXI.Graphics();
-    line.lineStyle(1, 0x000000, 1);
-    line.moveTo(_left, _bottom + _HALF_FONT);
-    line.lineTo(_left, _bottom);
-    line.lineTo(_right, _bottom);
-    line.lineTo(_right, _bottom + _HALF_FONT);
-    line.endFill();
+    // helper that positions the text and line
+    var position = function () {
+      min.position.y = max.position.y = _bottom + _DOUBLE_PADDING;
+      _right = _d - (halfMax + _PADDING);
+      max.position.x = _right - halfMax;
+      label.position.x = ((_left + _right) /2) - (label.width / 2);
+      label.position.y = _bottom + _PADDING;
+      line.clear();
+      line.lineStyle(1, 0x000000, 1);
+      line.moveTo(_left, _bottom + _HALF_FONT);
+      line.lineTo(_left, _bottom);
+      line.lineTo(_right, _bottom);
+      line.lineTo(_right, _bottom + _HALF_FONT);
+      line.endFill();
+    }
     // piece it all together
     var axis = new PIXI.Container();
     axis.addChild(min);
@@ -245,45 +257,62 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
     axis.addChild(line);
     // add the axis to the stage
     _stage.addChild(axis);
+    // decorate the resize function
+    _stage.resize = function(resize) {
+      resize();
+      position();
+    }.bind(null, _stage.resize);
   };
 
   /** Draws the points. */
   var _points = function () {
     // compute how the points will be mapped from genomic coordinates
     var points = new PIXI.Container(),
-        scaleY = (_bottom - _TOP) / (_maxY - _minY),
-        scaleX = (_right - _left) / (_maxX - _minX),
         r = 5,
         sc = _options.selectiveColoring;
     // draw the points
     for (var i = 0; i < _data.genes.length; i++) {
       var p = new PIXI.Graphics();
       p.data = _data.genes[i];
-      var x = _left + ((_maxX - p.data.x) * scaleX),
-          y = (p.data.y >= 0) ?
-              _bottom - ((_maxY - p.data.y) * scaleY) :
-              _OUTLIERS,
-          c = (sc && sc[p.data.family] > 1) ?
+      var c = (sc && sc[p.data.family] > 1) ?
               parseInt(contextColors(p.data.family).replace(/^#/, ''), 16) :
               0xFFFFFF;
       p.beginFill(c);
-      p.drawCircle(x, y, r);
+      p.drawCircle(0, 0, r);
       p.endFill();
       p.lineStyle(2, 0x000000);
-      p.drawCircle(x, y, r);
+      p.drawCircle(0, 0, r);
       p.endFill();
       p.interactive = true;
       p.on('mousedown', function () { console.log(_data); });
       points.addChild(p);
     }
+    // helper that positions the points
+    var position = function () {
+      var scaleY = (_bottom - _TOP) / (_maxY - _minY),
+          scaleX = (_right - _left) / (_maxX - _minX);
+      for (var i = 0; i < points.children.length; i++) {
+        var p = points.children[i];
+        p.x = _left + ((_maxX - p.data.x) * scaleX),
+        p.y = (p.data.y >= 0) ?
+            _bottom - ((_maxY - p.data.y) * scaleY) :
+            _OUTLIERS;
+      }
+    }
     // add the points to the stage
     _stage.addChild(points);
+    // decorate the resize function
+    _stage.resize = function(resize) {
+      resize();
+      position();
+    }.bind(null, _stage.resize);
   };
 
   // Draw the view - ORDER MATTERS!
   _yAxis();
   _xAxis();
   _points();
+  _stage.resize();
   GCV.add(_stage);
 
   /* public */

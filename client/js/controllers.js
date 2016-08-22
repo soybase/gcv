@@ -366,10 +366,10 @@ function ($scope, Gene, Viewer, UI) {
 
   function getGene(g) {
     UI.showLeftSpinner();
+    gene.source = g.source;
+    gene.name = g.name;
+    gene.family = g.family;
     Gene.get(g.name, g.source, function (links) {
-      gene.source = g.source;
-      gene.name = g.name;
-      gene.family = g.family;
       gene.links = links;
       UI.hideSpinners();
     }, function (response) {

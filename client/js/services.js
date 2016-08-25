@@ -811,7 +811,8 @@ contextServices.service('Plot', function ($http, Viewer, UI) {
     //$(element).html('');
     if (plots.hasOwnProperty(element)) plots[element].destroy();
     plots[element] = new GCV.DotPlot(element.substr(1), data, {
-      selectiveColoring: familySizes
+      selectiveColoring: familySizes,
+      geneClick: Viewer.geneClickEvent
       //autoResize: true
     });
     //plot(element.substr(1), familySizes, colors, data, {  // plot.js

@@ -284,7 +284,9 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
       p.drawCircle(0, 0, r);
       p.endFill();
       p.interactive = true;
-      p.on('mousedown', function () { console.log(_data); });
+      p.buttonMode = true;
+      p.defaultCursor = "pointer"
+      p.on('mousedown', function (e) { _options.geneClick(p.data); });
       points.addChild(p);
     }
     // helper that positions the points

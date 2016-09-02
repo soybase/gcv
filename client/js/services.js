@@ -167,10 +167,32 @@ contextServices.service('UI', function ($localStorage, $location, $rootScope) {
 // responsible for storing context viewer data and drawing the viewer and legend
 contextServices.service('Viewer',
 function ($rootScope, UI) {
-  var scope;
-  var tracks;
-  var args;
-  var colors = contextColors;  // context.js
+  var scope,
+      tracks,
+      args,
+      colors = contextColors,  // context.js
+      familySizes,
+      legend,
+      familyGeneMap,
+      familySizeMap;
+
+	// computes the genes in each family and how many there are
+  var computeFamilyMaps = function () {
+  	familyGeneMap = {}; 
+    familySizeMap = {};
+  	for (var i = 0; i < tracks.groups.length; i++) {
+  	  for (var j = 0; j < tracks.groups[i].genes.length; j++) {
+        var g = tracks.groups[i].genes[j],
+  	        f = g.family;
+  	    if (!familyGeneMap.hasOwnProperty(f)) {
+          familyGeneMap[f] = [];
+  	      familySizeMap[f] = 0;
+  	    }
+        familyGeneMap[f].push(g);
+  	    familySizeMap[f] += 1;
+  	  }
+  	}
+  }
 
   // the services provided by Viewer
   var services = {};
@@ -187,10 +209,19 @@ function ($rootScope, UI) {
     scope.$on('$destroy', handler);
   }
 
+  services.getFamilyGenes = function (f) {
+    return familyGeneMap[f];
+  }
+
+  services.getFamilySizes = function () {
+    return familySizeMap;
+  }
+
   // how new track data is loaded for the context viewer
   services.init = function (new_tracks, new_args) {
     // initialize the new tracks
     tracks = new_tracks;
+    computeFamilyMaps();
     // save the new viewer arguments
     args = new_args;
     // draw the viewer
@@ -236,12 +267,19 @@ function ($rootScope, UI) {
       // draw the viewer
       contextViewer('viewer-content', colors, tracks, args);  // context.js
       // draw the legend
-      contextLegend('legend-content', colors, tracks, {  // context.js
-        "legendClick": function (family, genes) {
+      if (legend !== undefined) legend.destroy();
+      legend = new GCV.Legend('legend-content', tracks, {  // context.js
+        "click": function (family, genes) {
           $rootScope.$broadcast('family-click-event', family, genes);
         },
-        "selectiveColoring": selective
+        "selectiveColoring": familySizes
       });
+      //contextLegend('legend-content', colors, tracks, {  // context.js
+      //  "legendClick": function (family, genes) {
+      //    $rootScope.$broadcast('family-click-event', family, genes);
+      //  },
+      //  "selectiveColoring": selective
+      //});
     }
   }
 
@@ -826,7 +864,7 @@ contextServices.service('Plot', function ($http, Viewer, UI) {
     init: function (tracks) {
       if (tracks.groups.length > 0) {
         query = tracks.groups[0].genes.map(function (g) { return g.family; });
-        familySizes = getFamilySizeMap(tracks)  // context.js
+        familySizes = Viewer.getFamilySizes()
         plotLocals(tracks);
       }
     },

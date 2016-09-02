@@ -85,9 +85,9 @@ function ($scope, $location, Viewer, Search, UI) {
     });
     UI.showLeftSlider();
   });
-  Viewer.subscribeToFamilyClick($scope, function (e, family, genes) {
+  Viewer.subscribeToFamilyClick($scope, function (e, f) {
     $scope.$apply(function () {
-      state.args = {family: family, genes: genes};
+      state.args = {family: f, genes: Viewer.getFamilyGenes(f)};
       state.current = 'family';
     });
     UI.showLeftSlider();
@@ -119,7 +119,7 @@ function ($scope, $routeParams, Basic, Viewer, UI) {
   UI.enableSliders();
 
   // listen for resize events
-  UI.subscribeToResize($scope, function () { Viewer.draw(); });
+  //UI.subscribeToResize($scope, function () { Viewer.draw(); });
 
   // actually draws the viewer
   function draw(tracks) {
@@ -208,7 +208,7 @@ function ($scope, $routeParams, Search, Viewer, UI) {
   Viewer.enableSearch();
 
   // listen for resize events
-  UI.subscribeToResize($scope, function () { Viewer.draw(); });
+  //UI.subscribeToResize($scope, function () { Viewer.draw(); });
 
   // draw the viewer
   function draw(num_returned, num_aligned, tracks, sorter) {
@@ -429,10 +429,10 @@ contextControllers
 function ($scope, Viewer, UI) {
   var family = this;
 
-  function getData(f, g) {
+  function getData(f) {
     UI.showLeftSpinner();
-    family.name = f;
-    family.genes = g;
+    family.name = f.name;
+    family.genes = Viewer.getFamilyGenes(f.name);
     family.gene_list = family.genes.map(
       function (g){ return g.name; }
     ).join(',');
@@ -443,9 +443,9 @@ function ($scope, Viewer, UI) {
     getData(args.family, args.genes);
   }
 
-  Viewer.subscribeToFamilyClick($scope, function (e, f, g) {
+  Viewer.subscribeToFamilyClick($scope, function (e, f) {
     $scope.$apply(function () {
-      getData(f, g);
+      getData(f);
     });
   });
 });

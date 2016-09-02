@@ -159,6 +159,9 @@ a {
   bottom: 0;
   left: 0;
 }
+#right-slider #legend-wrapper .vertical-scroll #legend #legend-content {
+  width: 100%;
+}
 #right-slider #plot {
   display: table-row;
   width: 100%;

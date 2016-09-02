@@ -14,8 +14,9 @@ var GCV = (function (PIXI) {
       _queue = [],                                // elements that need updating
       _passive = PIXI.autoDetectRenderer(1, 1, {  // renders the update queue
         antialias: true,
-        transparent: true,
-        preserveDrawingVector: true
+        //transparent: true,
+        preserveDrawingVector: true,
+        backgroundColor: 0xFCFCFC
       });
 
   /** The passive render loop. */
@@ -24,8 +25,9 @@ var GCV = (function (PIXI) {
       // get the next stage to be drawn
       var stage = _queue.shift();
       // adjust size of renderer
-      var d = Math.max(stage.element.clientWidth, stage.element.clientHeight);
-      _passive.resize(d, d);
+      var w = stage.element.clientWidth,
+          h = stage.height;//stage.element.clientHeight;
+      _passive.resize(w, h);
       _passive.render(stage);
       // update the image source
       stage.img.src = _passive.view.toDataURL();
@@ -64,8 +66,9 @@ var GCV = (function (PIXI) {
     stage.img.onmouseover = function (e) {
       // actively animate the stage
       stage.element.removeChild(this);
-      var d = Math.max(stage.element.clientWidth, stage.element.clientHeight);
-      _active.resize(d, d);
+      var w = stage.element.clientWidth,
+          h = stage.height;//stage.element.clientHeight;
+      _active.resize(w, h);
       stage.animate();
       stage.element.appendChild(_active.view);
       // replace the animation with an image when the mouse leaves the stage
@@ -79,21 +82,21 @@ var GCV = (function (PIXI) {
       }
     }
     // add the hidden iframe for resize events
-    stage.iframe = document.createElement('iframe');
-    stage.iframe.setAttribute('allowtransparency', true);
-    stage.iframe.style.width = '100%';
-    stage.iframe.style.height = '0';
-    stage.iframe.style.position = 'absolute';
-    stage.iframe.style.border = 'none';
-    stage.iframe.style.backgroundColor = 'transparent';
-    stage.element.appendChild(stage.iframe);
-    stage.iframe.contentWindow.onresize = function (e) {
-      clearTimeout(stage.timer);
-      stage.timer = setTimeout(function () {
-        stage.resize();
-        _queue.push(stage);
-      }, 100);
-    }
+    //stage.iframe = document.createElement('iframe');
+    //stage.iframe.setAttribute('allowtransparency', true);
+    //stage.iframe.style.width = '100%';
+    //stage.iframe.style.height = '0';
+    //stage.iframe.style.position = 'absolute';
+    //stage.iframe.style.border = 'none';
+    //stage.iframe.style.backgroundColor = 'transparent';
+    //stage.element.appendChild(stage.iframe);
+    //stage.iframe.contentWindow.onresize = function (e) {
+    //  clearTimeout(stage.timer);
+    //  stage.timer = setTimeout(function () {
+    //    stage.resize();
+    //    _queue.push(stage);
+    //  }, 100);
+    //}
   }
   /**
     * Removes a PIXI stage.
@@ -102,7 +105,7 @@ var GCV = (function (PIXI) {
   var _remove = function (stage) {
     _stopAnimation(stage);
     stage.img.remove();
-    stage.iframe.remove();
+    //stage.iframe.remove();
     stage.element.onmouseover = function () { };
     stage.element.onmouseout = function () { };
     stage.img = stage.iframe = stage.element = undefined;
@@ -111,7 +114,8 @@ var GCV = (function (PIXI) {
 
   /** GCV public interface. */
   return {
-    DotPlot: _protected
+    DotPlot: _protected,
+    Legend: _protected
   }
 })(PIXI);
 
@@ -331,6 +335,123 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
     destroy: destroy
   }
 }.bind(null, GCV.DotPlot, PIXI);
+
+
+/**
+  * Constructor.
+  * @param {string} id - ID of the container where the plot is to be drawn.
+  * @param {object} data - The data to be plotted.
+  * @param {object} options - Optional parameters.
+  */
+GCV.Legend = function (GCV, PIXI, id, data, options) {
+
+  /* private */
+
+  // constants
+  var _PADDING        = 3,
+      _DOUBLE_PADDING = 2 * _PADDING;
+      _FADE           = 0.15,
+      _FONT_SIZE      = 12,
+      _OUTLIERS       = _PADDING + _HALF_FONT;
+
+  // the PIXI stage
+  var _stage = new PIXI.Container(),
+      _w,
+      _bottom;
+  _stage.element = document.getElementById(id);
+  _stage.resize = function () {
+    _w = _stage.element.clientWidth;
+  }
+
+  // global variables
+  var _data = data,
+      _right = null;
+
+  // parse optional parameters
+  var _options = options || {};
+  _options.click = _options.click || function (d, genes) { };
+  _options.selectiveColoring = _options.selectiveColoring || undefined;
+  _options.autoResize = _options.autoResize || false;
+
+  /** Draws the legend. */
+  var _legend = function () {
+    var legend = new PIXI.Container();
+    // draw the entries
+    var normal = {font : _FONT_SIZE + 'px Arial', align : 'left'},
+        width = 2 * _FONT_SIZE,
+        height = _FONT_SIZE + (2 * _PADDING),
+        sc = _options.selectiveColoring,
+        j = 0;
+    for (var i = 0; i < _data.families.length; i++) {
+      var d = _data.families[i];
+      if (!sc || (sc && sc[d.name] > 1)) {
+        // graphics
+        var f = new PIXI.Container();
+        f.position.y = ((j + 1) * _PADDING) + (j * height);
+        f.data = d;
+        // text
+        var family = new PIXI.Text(f.data.name, normal);
+        family.position.y = _PADDING;
+        f.addChild(family);
+        // rectangle
+        var r = new PIXI.Graphics();
+        var c = parseInt(contextColors(f.data.name).replace(/^#/, ''), 16);
+        r.beginFill(c);
+        r.drawRect(family.width + _PADDING, 0, width, height);
+        r.endFill();
+        r.lineStyle(2, 0x000000);
+        r.drawRect(family.width + _PADDING, 0, width, height);
+        r.endFill();
+        f.addChild(r);
+        // make the container interactive
+        f.interactive = true;
+        f.buttonMode = true;
+        f.defaultCursor = "pointer"
+        f.on('mousedown', function (e) { _options.click(e.target.data); });
+        // TODO: on mouse in/out events
+        legend.addChild(f);
+        j++;
+      }
+    }
+    // add extra padding at the bottom
+    var bottom = new PIXI.Graphics();
+    bottom.drawRect(0, legend.height, 1, _PADDING);
+    legend.addChild(bottom);
+    // helper that positions the text and boxes
+    var position = function () {
+      for (var i = 0; i < legend.children.length; i++) {
+        var f = legend.children[i];
+        f.position.x = _w - (f.width + _PADDING);
+      }
+    }
+    // add the legend to the stage
+    _stage.addChild(legend);
+    // decorate the resize function
+    _stage.resize = function(resize) {
+      resize();
+      position();
+    }.bind(null, _stage.resize);
+  }
+
+  // Draw the view - ORDER MATTERS!
+  _legend();
+  _stage.resize();
+  GCV.add(_stage);
+
+  /* public */
+
+  /** Destroys the dot plot. */
+  var destroy = function () {
+    GCV.remove(_stage);
+    _stage.destroy();
+    _stage = undefined;
+  };
+
+  /** DotPlot public interface. */
+  return {
+    destroy: destroy
+  }
+}.bind(null, GCV.Legend, PIXI);
 
 
 function plot(containerID, familySizes, color, points, optionalParameters) {

@@ -17,20 +17,25 @@ var GCV = (function (PIXI) {
         //transparent: true,
         preserveDrawingVector: true,
         backgroundColor: 0xFCFCFC
-      });
+      }),
+      _familySubscribers = [],
+      _geneSubscribers = [];
 
   /** The passive render loop. */
   var _animate = function () {
     if (_queue.length > 0) {
       // get the next stage to be drawn
       var stage = _queue.shift();
-      // adjust size of renderer
-      var w = stage.element.clientWidth,
-          h = stage.height;//stage.element.clientHeight;
-      _passive.resize(w, h);
-      _passive.render(stage);
-      // update the image source
-      stage.img.src = _passive.view.toDataURL();
+      // make sure the stage isn't being actively rendered
+      if (stage.animationFrame === undefined) {
+        // adjust size of renderer
+        var w = stage.element.clientWidth,
+            h = stage.height;//stage.element.clientHeight;
+        _passive.resize(w, h);
+        _passive.render(stage);
+        // update the image source
+        stage.img.src = _passive.view.toDataURL();
+      }
     }
     requestAnimationFrame(_animate);
   }
@@ -97,6 +102,21 @@ var GCV = (function (PIXI) {
     //    _queue.push(stage);
     //  }, 100);
     //}
+    // subscribe the stage to the appropriate events
+    var subscribe = function (list) {
+      list.push(stage);
+    }
+    if (stage.events) {
+      for (var e in stage.events) {
+        if (stage.hasOwnProperty(e)) {
+          if (e == 'family') {
+            subscribe(_familySubscribers);
+          } else if (e == 'gene') {
+            subscribe(_geneSubscribers);
+          }
+        }
+      }
+    }
   }
   /**
     * Removes a PIXI stage.
@@ -109,8 +129,64 @@ var GCV = (function (PIXI) {
     stage.element.onmouseover = function () { };
     stage.element.onmouseout = function () { };
     stage.img = stage.iframe = stage.element = undefined;
+    // unsubscribe the stage from the appropriate events
+    var unsubscribe = function (list) {
+      var i = list.indexOf(stage);
+      if (i > -1) {
+        list.splice(i, 1);
+      }
+    }
+    if (stage.events) {
+      for (var e in stage.events) {
+        if (stage.hasOwnProperty(e)) {
+          if (e == 'family') {
+            unsubscribe(_familySubscribers);
+          } else if (e == 'gene') {
+            unsubscribe(_geneSubscribers);
+          }
+        }
+      }
+    }
   }
-  var _protected = {add: _add, remove: _remove};
+
+  /**
+    * Called when a hover event occurs.
+    * @param {Array} list - The subscriber list to apply the hover to.
+    * @param {string} type - The hover function to call on the subscribers.
+    * @param {string} e - The ID of the element being hovered.
+    */
+  var _hover = function (list, type, e) {
+    console.log('hovering ' + type);
+    for (var i = 0; i < list.length; i++) {
+      var stage = list[i];
+      stage[type](e);
+      list.push(stage);
+    }
+  }
+
+  /**
+    * Called when a gene family is hovered over.
+    * @param {string} family - The family being hovered over.
+    */
+  var _hoverFamily = function (family) {
+    _hover(_familySubscribers, 'family', family);
+  }
+
+  /**
+    * Called when a gene is hovered over.
+    * @param {string} gene - The gene being hovered over.
+    */
+  var _hoverGene = function (gene) {
+    _hover(_geneSubscribers, 'gene', gene);
+  }
+
+  // Functions only classes in the GCV namespace can see
+  var _protected = {
+    add: _add,
+    remove: _remove,
+    hoverFamily: _hoverFamily,
+    hoverGene: _hoverGene
+  };
 
   /** GCV public interface. */
   return {
@@ -291,6 +367,8 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
       p.buttonMode = true;
       p.defaultCursor = "pointer"
       p.on('mousedown', function (e) { _options.geneClick(p.data); });
+      p.on('mouseover', function (e) { GCV.hoverGene(p.data.family); });
+      p.on('mouseout', function (e) { GCV.hoverGene(); });
       points.addChild(p);
     }
     // helper that positions the points
@@ -319,6 +397,12 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
   _xAxis();
   _points();
   _stage.resize();
+
+  // Register with GCV
+  _stage.events = {
+    family: function (f) { console.log(f); },
+    gene: function (g) { console.log(g); }
+  }
   GCV.add(_stage);
 
   /* public */
@@ -407,6 +491,10 @@ GCV.Legend = function (GCV, PIXI, id, data, options) {
         f.buttonMode = true;
         f.defaultCursor = "pointer"
         f.on('mousedown', function (e) { _options.click(e.target.data); });
+        f.on('mouseover', function (e) {
+          GCV.hoverFamily(e.target.data.name);
+        });
+        f.on('mouseout', function (e) { GCV.hoverFamily(); });
         // TODO: on mouse in/out events
         legend.addChild(f);
         j++;

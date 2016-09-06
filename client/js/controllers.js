@@ -331,7 +331,7 @@ function ($scope, $routeParams, Search, Viewer, UI) {
 
 // search viewer
 contextControllers.controller('SyntenyCtrl',
-function ($scope, Synteny, Search, UI) {
+function ($scope, Search, Synteny, UI) {
   var draw = function () {
     Synteny.draw(function () {
       console.log('name clicked');
@@ -347,7 +347,7 @@ function ($scope, Synteny, Search, UI) {
       }
     );
   }
-  Search.subscribeToNewFilteredTracks($scope, function (e, tracks) {
+  Search.subscribeToNewAlignment($scope, function (e, tracks) {
     var query = tracks.groups[0];
     var resultTracks = tracks.groups.splice(1, tracks.groups.length - 1)
     var results = resultTracks.map(function(r) {
@@ -473,7 +473,7 @@ function ($scope, Plot, Viewer, Search, UI) {
   });
 
   // (re)initialize when new tracks are available
-  Search.subscribeToNewFilteredTracks($scope, function (e, tracks) {
+  Search.subscribeToNewAlignment($scope, function (e, tracks) {
     Plot.init(tracks);
     Plot.allLocal();
   });

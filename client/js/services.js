@@ -218,9 +218,9 @@ function ($rootScope, UI) {
   }
 
   // how new track data is loaded for the context viewer
-  services.init = function (new_tracks, new_args) {
+  services.init = function (newTracks, new_args) {
     // initialize the new tracks
-    tracks = new_tracks;
+    tracks = newTracks;
     computeFamilyMaps();
     // save the new viewer arguments
     args = new_args;
@@ -536,6 +536,10 @@ contextServices.service('Search', function ($http, $q, $rootScope, Viewer) {
       return {id: value, name: sources[value].name};
     });
   }
+  services.subscribeToNewAlignment = function (scope, callback) {
+    var handler = $rootScope.$on('new-alignment-event', callback);
+    scope.$on('$destroy', handler);
+  }
 
   // align the result tracks to the query
   services.align = function(params, callback) {
@@ -577,23 +581,23 @@ contextServices.service('Search', function ($http, $q, $rootScope, Viewer) {
     for (var i = 1; i < aligned.groups.length; i++) {
       aligned.groups[i].score = scores[aligned.groups[i].id];
     }
-    // filter the original tracks by which ones were aligned
-    var filtered_tracks = {
-      groups: tracks.groups.filter(function(track) {
-        return scores.hasOwnProperty(track.id);
-      }),
-      numNeighbors: params.numNeighbors
-    };
-    filtered_tracks.groups.sort(orderings[params.order].algorithm);
-    filtered_tracks.groups.unshift(tracks.groups[0]);
     // send the tracks into the wild
-    $rootScope.$broadcast('new-filtered-tracks-event', filtered_tracks);
     callback(
       tracks.groups.length-1,
       num_aligned,
       aligned,
       orderings[params.order].algorithm
     );
+    // filter the original tracks by which ones were aligned
+    var filteredTracks = {
+      groups: tracks.groups.filter(function(track) {
+        return scores.hasOwnProperty(track.id);
+      }),
+      numNeighbors: params.numNeighbors
+    };
+    filteredTracks.groups.sort(orderings[params.order].algorithm);
+    filteredTracks.groups.unshift(tracks.groups[0]);
+    $rootScope.$broadcast('new-alignment-event', filteredTracks);
   }
 
   // initializes a new query by resolving a focus gene into a query track
@@ -693,12 +697,6 @@ contextServices.service('Search', function ($http, $q, $rootScope, Viewer) {
       }
     },
     function (reason) { errorCallback(reason); });
-  }
-
-  // distributes the new set of tracks filtered by which were aligned
-  services.subscribeToNewFilteredTracks = function (scope, callback) {
-    var handler = $rootScope.$on('new-filtered-tracks-event', callback);
-    scope.$on('$destroy', handler);
   }
 
   // scroll the query track
@@ -864,7 +862,9 @@ contextServices.service('Plot', function ($http, Viewer, UI) {
     init: function (tracks) {
       if (tracks.groups.length > 0) {
         query = tracks.groups[0].genes.map(function (g) { return g.family; });
-        familySizes = Viewer.getFamilySizes()
+        familySizes = Viewer.getFamilySizes();
+        console.log('family sizes');
+        console.log(familySizes);
         plotLocals(tracks);
       }
     },

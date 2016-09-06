@@ -171,11 +171,11 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
 
   // parse optional parameters
   var _options = options || {};
-  _options.geneClick = _options.geneClick || function (gene) { };
-  _options.plotClick = _options.plotClick || function (track) { };
-  _options.bruchCallback = _options.brushCallback || function (genes) { };
-  _options.selectiveColoring = _options.selectiveColoring || undefined;
-  _options.autoResize = _options.autoResize || false;
+  _options.geneClick = options.geneClick || function (gene) { };
+  _options.plotClick = options.plotClick || function (track) { };
+  _options.bruchCallback = options.brushCallback || function (genes) { };
+  _options.selectiveColoring = options.selectiveColoring || undefined;
+  _options.autoResize = options.autoResize || false;
 
   /** Draws the y-axis. */
   var _yAxis = function () {
@@ -351,8 +351,7 @@ GCV.Legend = function (GCV, PIXI, id, data, options) {
   var _PADDING        = 3,
       _DOUBLE_PADDING = 2 * _PADDING;
       _FADE           = 0.15,
-      _FONT_SIZE      = 12,
-      _OUTLIERS       = _PADDING + _HALF_FONT;
+      _FONT_SIZE      = 12;
 
   // the PIXI stage
   var _stage = new PIXI.Container(),
@@ -369,9 +368,9 @@ GCV.Legend = function (GCV, PIXI, id, data, options) {
 
   // parse optional parameters
   var _options = options || {};
-  _options.click = _options.click || function (d, genes) { };
-  _options.selectiveColoring = _options.selectiveColoring || undefined;
-  _options.autoResize = _options.autoResize || false;
+  _options.click = options.click || function (d, genes) { };
+  _options.selectiveColoring = options.selectiveColoring || undefined;
+  _options.autoResize = options.autoResize || false;
 
   /** Draws the legend. */
   var _legend = function () {

@@ -118,6 +118,7 @@ var GCV = (function (PIXI) {
       }
     }
   }
+
   /**
     * Removes a PIXI stage.
     * @param {object} stage - The stage to be removed.
@@ -156,7 +157,6 @@ var GCV = (function (PIXI) {
     * @param {string} e - The ID of the element being hovered.
     */
   var _hover = function (list, type, e) {
-    console.log('hovering ' + type);
     for (var i = 0; i < list.length; i++) {
       var stage = list[i];
       stage[type](e);
@@ -365,10 +365,17 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
       p.endFill();
       p.interactive = true;
       p.buttonMode = true;
-      p.defaultCursor = "pointer"
-      p.on('mousedown', function (e) { _options.geneClick(p.data); });
-      p.on('mouseover', function (e) { GCV.hoverGene(p.data.family); });
-      p.on('mouseout', function (e) { GCV.hoverGene(); });
+      p.defaultCursor = "pointer";
+      p.on('mousedown', function (e) { _options.geneClick(e.target.data); });
+      p.on('mouseover', function (e) {
+        var g = e.target.data.id;
+        _hoverGene(g);
+        GCV.hoverGene(g);
+      });
+      p.on('mouseout', function (e) {
+        //_hoverGene();
+        //GCV.hoverGene();
+      });
       points.addChild(p);
     }
     // helper that positions the points
@@ -385,12 +392,51 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
     }
     // add the points to the stage
     _stage.addChild(points);
+    _stage.points = points.children;
     // decorate the resize function
     _stage.resize = function(resize) {
       resize();
       position();
     }.bind(null, _stage.resize);
   };
+
+  /**
+    * What genes do when a gene is hovered.
+    * @param {string} g - ID of gene being hovered.
+    */
+  var _hoverGene = function (g) {
+    if (g === undefined) {
+      for (var i = 0; i < _stage.points.length; i++) {
+        _stage.points[i].alpha = 1;
+      }
+    } else {
+      for (var i = 0; i < _stage.points.length; i++) {
+        var p = _stage.points[i];
+        if (p.data.id != g) {
+          p.alpha = _FADE;
+        }
+      }
+    }
+  }
+
+  /**
+    * What genes do when a family is hovered.
+    * @param {string} f - ID of family being hovered.
+    */
+  var _hoverFamily = function (f) {
+    if (f === undefined) {
+      for (var i = 0; i < _stage.points.length; i++) {
+        _stage.points[i].alpha = 1;
+      }
+    } else {
+      for (var i = 0; i < _stage.points.length; i++) {
+        var p = _stage.points[i];
+        if (p.data.family != f) {
+          p.alpha = _FADE;
+        }
+      }
+    }
+  }
 
   // Draw the view - ORDER MATTERS!
   _yAxis();
@@ -400,8 +446,8 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
 
   // Register with GCV
   _stage.events = {
-    family: function (f) { console.log(f); },
-    gene: function (g) { console.log(g); }
+    gene: _hoverGene,
+    family: _hoverFamily
   }
   GCV.add(_stage);
 
@@ -492,9 +538,14 @@ GCV.Legend = function (GCV, PIXI, id, data, options) {
         f.defaultCursor = "pointer"
         f.on('mousedown', function (e) { _options.click(e.target.data); });
         f.on('mouseover', function (e) {
-          GCV.hoverFamily(e.target.data.name);
+          var f = e.target.data.id;
+          _hoverFamily(f);
+          GCV.hoverFamily(f);
         });
-        f.on('mouseout', function (e) { GCV.hoverFamily(); });
+        f.on('mouseout', function (e) {
+          _hoverFamily();
+          GCV.hoverFamily();
+        });
         // TODO: on mouse in/out events
         legend.addChild(f);
         j++;
@@ -513,11 +564,31 @@ GCV.Legend = function (GCV, PIXI, id, data, options) {
     }
     // add the legend to the stage
     _stage.addChild(legend);
+    _stage.families = legend.children;
     // decorate the resize function
     _stage.resize = function(resize) {
       resize();
       position();
     }.bind(null, _stage.resize);
+  }
+
+  /**
+    * What families do when a family is hovered.
+    * @param {string} family - ID of family being hovered.
+    */
+  var _hoverFamily = function (family) {
+    if (family === undefined) {
+      for (var i = 0; i < _stage.families.length; i++) {
+        _stage.families[i].alpha = 1;
+      }
+    } else {
+      for (var i = 0; i < _stage.families.length; i++) {
+        var f = _stage.families[i];
+        if (f.data.id !== family) {
+          f.alpha = _FADE;
+        }
+      }
+    }
   }
 
   // Draw the view - ORDER MATTERS!

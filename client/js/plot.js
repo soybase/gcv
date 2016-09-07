@@ -21,13 +21,60 @@ var GCV = (function (PIXI) {
       _familySubscribers = [],
       _geneSubscribers = [];
 
+  /**
+    * Checks if an element in within the current viewport.
+    * @param {object} el - The element to be checked.
+    */
+  var _isVisible = function (el) {
+    var r = el.getBoundingClientRect(),
+        h = window.innerHeight || document.documentElement.clientHeight,
+        w  = window.innerWidth || document.documentElement.clientWidth,
+        efp      = function (x, y) { return document.elementFromPoint(x, y) };
+    console.log('w: ' + w + ', h: ' + h);
+    console.log(r);
+  
+    // Return false if it's not in the viewport
+    if (r.right < 0 || r.bottom < 0 || r.left > w || r.top > h) {
+      return false;
+    }
+  
+    // Return true if any of its four corners are visible
+    console.log(el);
+    console.log('and');
+    console.log(efp(r.left, r.top));
+    console.log(el.contains(efp(r.left, r.top)));
+    console.log(efp(r.right, r.top));
+    console.log(el.contains(efp(r.right, r.top)));
+    console.log(efp(r.right, r.bottom));
+    console.log(el.contains(efp(r.right, r.bottom)));
+    console.log(efp(r.left, r.bottom));
+    console.log(el.contains(efp(r.left, r.bottom)));
+    return (
+      el.contains(efp(r.left,  r.top)) ||
+      el.contains(efp(r.right, r.top)) ||
+      el.contains(efp(r.right, r.bottom)) ||
+      el.contains(efp(r.left,  r.bottom))
+    );
+  }
+
+  /**
+    * Adds a stage to the queue if it's not already in the queue.
+    * @param {object} stage - The stage to be added to the queue.
+    */
+  var _enqueue = function (stage) {
+    if (_queue.indexOf(stage) == -1) {
+      _queue.push(stage);
+    }
+  }
+
   /** The passive render loop. */
   var _animate = function () {
     if (_queue.length > 0) {
       // get the next stage to be drawn
       var stage = _queue.shift();
       // make sure the stage isn't being actively rendered
-      if (stage.animationFrame === undefined) {
+      if (stage.animationFrame === undefined) {// && _isVisible(stage.element)) {
+        console.log('rendering');
         // adjust size of renderer
         var w = stage.element.clientWidth,
             h = stage.height;//stage.element.clientHeight;
@@ -62,9 +109,10 @@ var GCV = (function (PIXI) {
     // create the stage's image element
     stage.img = document.createElement('img');
     stage.element.appendChild(stage.img);
-    _queue.push(stage);
+    _enqueue(stage);
     // add active animation toggle
     stage.animate = function () {
+      console.log('animating');
       stage.animationFrame = requestAnimationFrame(stage.animate);
       _active.render(stage);
     }
@@ -81,7 +129,7 @@ var GCV = (function (PIXI) {
         _stopAnimation(stage);
         stage.element.removeChild(_active.view);
         //stage.img.src = _active.view.toDataURL();
-        _queue.push(stage);
+        _enqueue(stage);
         stage.element.appendChild(stage.img);
         _active.view.onmouseout = function (e) { };
       }
@@ -99,7 +147,7 @@ var GCV = (function (PIXI) {
     //  clearTimeout(stage.timer);
     //  stage.timer = setTimeout(function () {
     //    stage.resize();
-    //    _queue.push(stage);
+    //    _enqueue(stage);
     //  }, 100);
     //}
     // subscribe the stage to the appropriate events
@@ -107,14 +155,10 @@ var GCV = (function (PIXI) {
       list.push(stage);
     }
     if (stage.events) {
-      for (var e in stage.events) {
-        if (stage.hasOwnProperty(e)) {
-          if (e == 'family') {
-            subscribe(_familySubscribers);
-          } else if (e == 'gene') {
-            subscribe(_geneSubscribers);
-          }
-        }
+      if (stage.events.hasOwnProperty('family')) {
+          subscribe(_familySubscribers);
+      } else if (stage.events.hasOwnProperty('gene')) {
+        subscribe(_geneSubscribers);
       }
     }
   }
@@ -159,8 +203,8 @@ var GCV = (function (PIXI) {
   var _hover = function (list, type, e) {
     for (var i = 0; i < list.length; i++) {
       var stage = list[i];
-      stage[type](e);
-      list.push(stage);
+      stage.events[type](e);
+      _enqueue(stage);
     }
   }
 
@@ -405,6 +449,7 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
     * @param {string} g - ID of gene being hovered.
     */
   var _hoverGene = function (g) {
+    console.log('hovering');
     if (g === undefined) {
       for (var i = 0; i < _stage.points.length; i++) {
         _stage.points[i].alpha = 1;
@@ -448,7 +493,7 @@ GCV.DotPlot = function (GCV, PIXI, id, data, options) {
   _stage.events = {
     gene: _hoverGene,
     family: _hoverFamily
-  }
+  };
   GCV.add(_stage);
 
   /* public */
@@ -584,7 +629,7 @@ GCV.Legend = function (GCV, PIXI, id, data, options) {
     } else {
       for (var i = 0; i < _stage.families.length; i++) {
         var f = _stage.families[i];
-        if (f.data.id !== family) {
+        if (f.data && f.data.id !== family) {
           f.alpha = _FADE;
         }
       }

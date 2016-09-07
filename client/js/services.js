@@ -101,8 +101,9 @@ contextServices.service('UI', function ($localStorage, $location, $rootScope) {
   }
 
   // spinners
-  var spinner = '<div class="grey-screen">'
-    + '<div class="spinner"><img src="img/spinner.gif" /></div></div>';
+  //var spinner = '<div class="grey-screen">'
+  //  + '<div class="spinner"><img src="img/spinner.gif" /></div></div>';
+  var spinner = '';
   ui.showSpinners = function () {
     $('#main').append(spinner);
     $('#legend-wrapper .vertical-scroll').append(spinner);

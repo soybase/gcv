@@ -694,7 +694,7 @@ contextServices.service('Synteny', function ($http, $q, $rootScope, Viewer) {
   // where tracks can be loaded from
   var sources = {
     lis: {
-      get: 'http://localhost:8000/services/synteny/'
+      get: '/lis_context_server/services/synteny/'
     }
   };
 
@@ -727,7 +727,7 @@ contextServices.service('Synteny', function ($http, $q, $rootScope, Viewer) {
       // draw the viewer
       if (data !== undefined) {
         document.getElementById(ELEMENT).innerHTML = '';
-        if (viewer) viewer.destroy();
+        //if (viewer) viewer.destroy();
         viewer = new Synteny(ELEMENT, data, viewArgs);
       }
     }

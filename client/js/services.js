@@ -726,8 +726,7 @@ contextServices.service('Synteny', function ($http, $q, $rootScope, Viewer) {
       viewArgs.blockClick = blockClick;
       // draw the viewer
       if (data !== undefined) {
-        document.getElementById(ELEMENT).innerHTML = '';
-        //if (viewer) viewer.destroy();
+        if (viewer) viewer.destroy();
         viewer = new Synteny(ELEMENT, data, viewArgs);
       }
     }

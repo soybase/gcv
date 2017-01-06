@@ -12,14 +12,14 @@ import { Group }          from '../../models/group.model';
   selector: 'track-detail',
   template: `
     <h4>{{track.species_name}} - {{track.chromosome_name}}</h4>
-    <p><a href="/#/search/{{track.source}}/{{focus}}">Search for similar contexts</a></p>
+    <p><a href="#/search/{{track.source}}/{{focus}}">Search for similar contexts</a></p>
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of track.genes">
         {{gene.name}}: {{gene.fmin}} - {{gene.fmax}}
         <ul *ngIf="gene.family != ''">
           <li>
-            Family: <a href="/chado_gene_phylotree_v2/{{gene.family}}?gene_name='{{gene.name}}">{{gene.family}}</a>
+            Family: <a href="http://legumeinfo.org/chado_gene_phylotree_v2?family={{gene.family}}&gene_name='{{gene.name}}">{{gene.family}}</a>
           </li>
         </ul>
       </li>

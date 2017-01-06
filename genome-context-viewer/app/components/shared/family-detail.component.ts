@@ -15,7 +15,7 @@ import { MicroTracks }      from '../../models/micro-tracks.model';
   selector: 'family-detail',
   template: `
     <h4>{{family.name}}</h4>
-    <p><a href="http://legumeinfo.org/chado_gene_phylotree_v2?family={{family.name}}&gene_name={{gene_list}}">View genes in phylogram</a></p>
+    <p><a href="/chado_gene_phylotree_v2?family={{family.name}}&gene_name={{gene_list}}">View genes in phylogram</a></p>
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of genes">

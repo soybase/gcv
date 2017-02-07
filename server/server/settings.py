@@ -49,7 +49,7 @@ if socket.gethostname()[0:7] == 'legfed-':
     ALLOWED_HOSTS = [socket.gethostname(), 'localhost']
 else:
     #ALLOWED_HOSTS = [socket.gethostname(), 'legumeinfo.org']
-    ALLOWED_HOSTS = [socket.gethostname(), 'legumefederation.org', 'localhost']
+    ALLOWED_HOSTS = [socket.gethostname(), 'legumefederation.org', 'www.legumefederation.org', 'localhost']
 
 
 # Application definition

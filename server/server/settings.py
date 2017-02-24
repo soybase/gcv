@@ -49,7 +49,7 @@ if socket.gethostname()[0:4] == 'lis-':
     ALLOWED_HOSTS = [socket.gethostname(), 'localhost']
 else:
     #ALLOWED_HOSTS = [socket.gethostname(), 'legumeinfo.org']
-    ALLOWED_HOSTS = [socket.gethostname(), 'legumeinfo.org', 'localhost']
+    ALLOWED_HOSTS = [socket.gethostname(), 'legumeinfo.org', 'www.legumeinfo.org', 'localhost']
 
 
 # Application definition

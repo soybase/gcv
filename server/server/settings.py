@@ -165,7 +165,8 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'errors.log'),
+            #'filename': os.path.join(BASE_DIR, 'errors.log'),
+            'filename': '/tmp/lis_context_viewer-server-errors.log',
         },
     },
     'loggers': {

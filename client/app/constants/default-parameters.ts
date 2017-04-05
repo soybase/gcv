@@ -1,11 +1,11 @@
 // query parameters
-export const DEFAULT_NEIGHBORS = 10;
+export const DEFAULT_NEIGHBORS = 20;
 export const DEFAULT_MATCHED = 4;
 export const DEFAULT_INTERMEDIATE = 5;
-export const DEFAULT_SOURCE = 'lis';
+export const DEFAULT_SOURCE = 'lfo';
 
 // alignment parameters
-export const DEFAULT_ALIGNMENT = 'repeat'
+export const DEFAULT_ALIGNMENT = 'smith'
 export const DEFAULT_MATCH = 10;
 export const DEFAULT_MISMATCH = -1;
 export const DEFAULT_GAP = -1;

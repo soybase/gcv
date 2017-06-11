@@ -230,14 +230,14 @@ export class SearchComponent implements OnInit {
         keyClick: function (f) {
           this.selectFamily(f);
         }.bind(this),
-        highlight: [focus.family],
+        highlight: [focus != undefined ? focus.family : undefined],
         selectiveColoring: familySizes,
         selector: 'family'
       };
 
       this.macroLegendArgs = {
         autoResize: true,
-        highlight: [focus.family],
+        highlight: [focus != undefined ? focus.family : undefined],
         selector: 'genus-species'
       };
 
@@ -273,10 +273,10 @@ export class SearchComponent implements OnInit {
       let s = this._config.getServer(tracks.groups[0].source);
       if (s !== undefined && s.hasOwnProperty('macroColors')) {
         this.macroColors = s['macroColors'].function;
-        this._macroSplit.setSizes(
+        this._macroSplit.setSizes([
           this._splitSizes.topRight,
           this._splitSizes.bottomRight
-        );
+        ]);
       } else {
         this.macroColors = undefined;
         this._macroSplit.collapse(0);

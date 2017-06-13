@@ -345,7 +345,8 @@ GCV.Synteny = class {
     var tips = blocks.append('text')
       .attr('class', 'synteny-tip')
   	  .attr('text-anchor', 'end')
-  	  .text(function (b) { return b.start + ' - ' + b.stop; })
+  	  //.text(function (b) { return b.start + ' - ' + b.stop; })
+  	  .text(function (b) { return b.block; })
       .attr('data-x', function (b) {
         var x1 = b.start,
             x2 = b.stop;

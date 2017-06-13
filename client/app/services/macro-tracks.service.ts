@@ -31,7 +31,7 @@ export class MacroTracksService {
       this._store.dispatch({type: ADD_MACRO_TRACKS, payload: undefined})
       let query = tracks.groups[0];
       let results = tracks.groups.reduce((l, g, i) => {
-        if (i > 0 && g.source == query.source) l.push(g.chromosome_id);
+        if (i > 0) l.push(g.chromosome_id);
         return l;
       }, []);
       let idx = this._serverIDs.indexOf(query.source)

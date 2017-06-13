@@ -39,7 +39,7 @@ CORS_ALLOW_HEADERS = (
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 SITE_ID = 1
 

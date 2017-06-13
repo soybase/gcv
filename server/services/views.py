@@ -658,6 +658,13 @@ def v1_macro_synteny(request):
         region_to_chromosome = dict(
             (r.feature_id, r.srcfeature_id) for r in regions
         )
+        # actually get the feature names
+        features = list(Feature.objects\
+                .only('name')\
+                .filter(pk__in=region_ids))
+        feature_to_name = dict(
+            (f.feature_id, f.name) for f in features
+        )
         # actually get the chromosomes
         chromosomes = list(Feature.objects.only('name', 'organism')\
             .filter(pk__in=region_to_chromosome.values()))
@@ -674,11 +681,12 @@ def v1_macro_synteny(request):
                 orientation = '-' if l.strand == -1 else '+'
                 c = chromosome_map[region_to_chromosome[l.feature_id]]
                 name = c.name
+                block = feature_to_name[l.feature_id]
                 o = organism_map[c.organism_id]
                 species = o.species
                 genus = o.genus
                 feature_locs.setdefault((name, species, genus), []).append(
-                    {'start':l.fmin, 'stop':l.fmax, 'orientation':orientation}
+                    {'start':l.fmin, 'stop':l.fmax, 'orientation':orientation, 'block':block}
                 )
         # generate the json
         tracks = []

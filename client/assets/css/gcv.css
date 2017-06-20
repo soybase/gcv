@@ -1,11 +1,15 @@
 .GCV .pointer-events-none {
   pointer-events: none;
 }
-.GCV .outliers, .GCV .plot-label {
+.GCV .query, .GCV .outliers, .GCV .plot-label, .GCV .bold {
   font-weight: bold;
 }
 .GCV .label {
   font-size: 10px;
+}
+.GCV .block, .GCV .point {
+    stroke: #000;
+    stroke-width: 1;
 }
 .GCV .focus {
     stroke: #000;
@@ -56,9 +60,6 @@
 .GCV text {
     font-family: sans-serif;
     font-size: 10px;
-}
-.GCV .query {
-  font-weight: bold;
 }
 .GCV .synteny-tip {
   display: none;

@@ -1,8 +1,10 @@
 // Angular
 import { Component,
+         ElementRef,
          Input,
          OnChanges,
-         SimpleChanges } from '@angular/core';
+         SimpleChanges,
+         ViewChild } from '@angular/core';
 import { Router }        from '@angular/router';
 
 // App
@@ -14,12 +16,14 @@ import { ALERT_SUCCESS,
 import { AlertsService } from '../../services/alerts.service';
 import { Gene }          from '../../models/gene.model';
 
+declare var $: any;
+
 @Component({
   moduleId: module.id,
   selector: 'scroll',
   template: `
-    <form id="scroll-form" class="navbar-form form-inline navbar-right">
-      <div class="input-group col-lg-12">
+    <form>
+      <div class="input-group">
         <span class="input-group-btn">
           <button class="btn btn-default" type="button" (click)="scrollLeft(step.value)">
             &nbsp;<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>&nbsp;
@@ -34,10 +38,11 @@ import { Gene }          from '../../models/gene.model';
       </div>
     </form>
   `,
-  styles: [ '' ]
+  styles: [ 'form button { margin-right: 0; }' ]
 })
 
 export class ScrollComponent implements OnChanges {
+
   @Input() query: Gene[];
   @Input() gene: string;
 

@@ -1,67 +1,3 @@
-<!-- right slider -->
-<right-slider [hide]="rightSliderHidden">
-
-  <gcv-help [name]="'Gene Family Legend'" [showing]="showHelp">
-    <ul>
-      <li>Hover to highlight family's members.</li>
-      <li>Click to list members and link to gene tree.</li>
-    </ul>
-  </gcv-help>
-
-  <!-- legend -->
-  <app-legend class="vertical-fill"
-    [microTracks]="microTracks"
-    [colors]="colors"
-    [args]="legendArgs" >
-  </app-legend>
-
-  <!-- local and global dot plots -->
-  <div class="local-global-plots" *ngIf="showLocalGlobalPlots">
-    <div class="navbar navbar-default navbar-static-top">
-      <div class="container-fluid">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" aria-expanded="false">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-        </div>
-        <div class="collapse navbar-collapse">
-          <ul class="nav navbar-nav tabs">
-            <li [ngClass]="{'active': selectedPlot==plotTypes.LOCAL}">
-              <a (click)="showLocalPlot()">Local</a>
-            </li>
-            <li [ngClass]="{'active': selectedPlot==plotTypes.GLOBAL}">
-              <a (click)="showGlobalPlot()">Global</a>
-            </li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li>
-              <a><span class="glyphicon glyphicon glyphicon-remove pull-right" aria-hidden="true" (click)="hideLocalGlobalPlots()"></span></a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="outer-ratio">
-      <div class="inner-ratio" [ngSwitch]="selectedPlot">
-        <plot *ngSwitchCase="plotTypes.LOCAL"
-          [plot]="selectedLocal"
-          [colors]="colors"
-          [args]="plotArgs" >
-        </plot>
-        <plot *ngSwitchCase="plotTypes.GLOBAL"
-          [plot]="selectedGlobal"
-          [colors]="colors"
-          [args]="plotArgs" >
-        </plot>
-      </div>
-    </div>
-  </div>
-
-</right-slider>
-
-
 <!-- main content area -->
 <main>
 
@@ -69,16 +5,13 @@
   <header>
 		<ul class="nav navbar-nav tabs" left>
       <li><toggle-button (toggleFn)="selectParams()">Parameters</toggle-button></li>
-      <li><toggle-button (toggleFn)="help()">Help</toggle-button></li>
+      <!--<li><toggle-button (toggleFn)="help()">Help</toggle-button></li>-->
       <li [ngClass]="{'active': selectedContent==contentTypes.VIEWERS}">
         <a (click)="showViewers()">Viewers</a>
       </li>
       <li [ngClass]="{'active': selectedContent==contentTypes.PLOTS}">
         <a (click)="showPlots()">Dot Plots</a>
       </li>
-    </ul>
-    <ul class="nav navbar-nav" right>
-      <li><toggle-button (toggleFn)="toggleRightSlider()">Legend</toggle-button></li>
     </ul>
   </header>
 
@@ -87,56 +20,126 @@
 
     <!-- micro/macro viewers -->
     <main-content *ngSwitchCase="contentTypes.VIEWERS">
-      <div class="split">
-        <div #splitTop class="split-top">
-          <gcv-help [name]="'Context Synteny Blocks'" [showing]="showHelp">
-            <ul>
-              <li>Hover block to see location</li>
-              <li>Hover track for all block locations, highlight chromosome in Genome Contexts</li>
-            </ul>
-          </gcv-help>
-          <div class="split-content">
-            <macro-viewer
-              [tracks]="macroTracks"
-              [args]="macroArgs" >
-            </macro-viewer>
+      <div #left id="left" class="split split-horizontal">
+        <div #topLeft id="top-left" class="split content">
+					<macro-viewer
+            [tracks]="macroTracks"
+            [args]="macroArgs" >
+            <li><form>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" [checked]="macroConfig.order" (change)="toggleMacroOrder()"> Micro-synteny ordering
+                </label>
+              </div>
+              <div class="checkbox">
+                <label>
+                  <input type="checkbox" [checked]="macroConfig.filter" (change)="toggleMacroFilter()"> Micro-synteny only
+                </label>
+              </div>
+            </form></li>
+					</macro-viewer>
+				</div>
+        <div #bottomLeft id="bottom-left" class="split content">
+					<micro-viewer
+            [tracks]="microTracks"
+            [colors]="microColors"
+            [args]="microArgs" >
+      			<ul class="nav navbar-nav accordion">
+      			  <li [ngClass]="{'active': accordion==accordionTypes.REGEXP}">
+                <a (click)="setAccordion($event, accordionTypes.REGEXP)">
+                &nbsp;<span class="glyphicon glyphicon-filter" aria-hidden="true"></span>&nbsp;
+                </a>
+              </li>
+							<li class="target" [ngClass]="{'active': accordion==accordionTypes.REGEXP}">
+                <app-regexp></app-regexp>
+              </li>
+      			  <li [ngClass]="{'active': accordion==accordionTypes.ORDER}">
+                <a (click)="setAccordion($event, accordionTypes.ORDER)">
+                &nbsp;<span class="glyphicon glyphicon-triangle-bottom"></span><span class="glyphicon glyphicon-triangle-top"></span>&nbsp;
+                </a>
+              </li>
+							<li class="target" [ngClass]="{'active': accordion==accordionTypes.ORDER}">
+                <app-ordering></app-ordering>
+              </li>
+      			  <li [ngClass]="{'active': accordion==accordionTypes.SCROLL}">
+                <a (click)="setAccordion($event, accordionTypes.SCROLL)">
+                &nbsp;<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>&nbsp;
+                </a>
+              </li>
+              <li class="target" [ngClass]="{'active': accordion==accordionTypes.SCROLL}">
+                <scroll [gene]="routeGene" [query]="queryGenes" ></scroll>
+              </li>
+						</ul>
+					</micro-viewer>
+				</div>
+      </div>
+      <div #right id="right" class="split split-horizontal">
+        <div #topRight id="top-right" class="split content">
+          <div class="legend" *ngIf="macroColors">
+  				  <app-legend
+              [title]="'Macro Legend'"
+  				    [data]="macroLegend"
+  				    [colors]="macroColors"
+  				    [args]="macroLegendArgs" >
+  				  </app-legend>
           </div>
         </div>
-        <div #splitBottom class="split-bottom">
-          <gcv-help [name]="'Genome Contexts'" [showing]="showHelp">
-            <ul>
-              <li>Hover gene to see name, highlight in dotplots</li>
-              <li>Click gene for links to more info</li>
-              <li>Hover track for all gene names</li>
-              <li>Click track to list all genes and track options</li>
-            </ul>
-          </gcv-help>
-          <div class="split-content">
-            <micro-viewer
-              [tracks]="microTracks"
-              [colors]="colors"
-              [args]="microArgs" >
-            </micro-viewer>
+        <div #bottomRight id="bottom-right" class="split content">
+  				<!-- micro legend -->
+          <div class="legend">
+            <div class="vertical-fill">
+  				    <app-legend
+                [title]="'Micro Legend'"
+  				      [data]="microLegend"
+  				      [colors]="microColors"
+  				      [args]="microLegendArgs" >
+  				    </app-legend>
+            </div>
+  				  <!-- local and global dot plots -->
+  				  <div class="local-global-plots" *ngIf="showLocalGlobalPlots">
+              <context-menu [title]="'Dot Plots'" >
+  				      <ul class="nav navbar-nav tabs" navbar>
+  				        <li [ngClass]="{'active': selectedPlot==plotTypes.LOCAL}">
+  				          <a (click)="showLocalPlot()">Local</a>
+  				        </li>
+  				        <li [ngClass]="{'active': selectedPlot==plotTypes.GLOBAL}">
+  				          <a (click)="showGlobalPlot()">Global</a>
+  				        </li>
+  				      </ul>
+  				      <ul class="nav navbar-nav navbar-right" navbar>
+  				        <li>
+  				          <a><span class="glyphicon glyphicon-remove" aria-hidden="true" (click)="hideLocalGlobalPlots()"></span></a>
+  				        </li>
+  				      </ul>
+              </context-menu>
+  				    <div class="outer-ratio">
+  				      <div class="inner-ratio" [ngSwitch]="selectedPlot">
+  				        <plot *ngSwitchCase="plotTypes.LOCAL"
+  				          [plot]="selectedLocal"
+  				          [colors]="microColors"
+  				          [args]="plotArgs" >
+  				        </plot>
+  				        <plot *ngSwitchCase="plotTypes.GLOBAL"
+  				          [plot]="selectedGlobal"
+  				          [colors]="microColors"
+  				          [args]="plotArgs" >
+  				        </plot>
+  				      </div>
+  				    </div>
+					  </div>
           </div>
-        </div>
+				</div>
       </div>
     </main-content>
 
     <!-- all local plots -->
     <main-content *ngSwitchCase="contentTypes.PLOTS">
-      <gcv-help [name]="'Context Dot Plots'" [showing]="showHelp">
-        <ul>
-          <li>Hover gene to see name, highlight in dotplots</li>
-          <li>Click gene for links to more info</li>
-          <li>Click plot to load into single viewer</li>
-          <li>Click and drag zoom in on a plot</li>
-        </ul>
-      </gcv-help>
       <div class="plots" (scroll)="drawPlots()">
         <div class="plot col-sm-6 col-md-4" *ngFor="let p of microPlots">
           <plot
             [plot]="p"
-            [colors]="colors"
+            [colors]="microColors"
             [args]="plotArgs"
             [visibleDraw]="true" >
           </plot>
@@ -145,13 +148,6 @@
     </main-content>
 
   </div>
-
-  <!-- footer -->
-  <footer>
-    <app-regexp></app-regexp>
-    <app-ordering></app-ordering>
-    <scroll [gene]="routeGene" [query]="queryGenes"></scroll>
-  </footer>
 
 </main>
 

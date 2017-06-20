@@ -1,17 +1,23 @@
 // Angular
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component,
+         ElementRef,
+         OnDestroy,
+         OnInit,
+         ViewChild } from '@angular/core';
 
 // App services
 import { FilterService }         from '../../services/filter.service';
 import { ORDER_ALGORITHMS }      from '../../constants/order-algorithms';
 import { UrlQueryParamsService } from '../../services/url-query-params.service';
 
+declare var $: any;
+
 @Component({
   moduleId: module.id,
   selector: 'app-ordering',
   template: `
-    <form id="order-form" class="navbar-form navbar-left" #orderForm="ngForm">
-      <div class="form-group">
+    <form #orderForm="ngForm">
+      <div class="input-group">
         <select class="form-control" id="order"
             (change)="update()"
             [(ngModel)]="model.order" name="order">
@@ -20,10 +26,11 @@ import { UrlQueryParamsService } from '../../services/url-query-params.service';
       </div>
     </form>
   `,
-  styles: [ '' ]
+  styles: [ '.input-group { display: inline; }' ]
 })
 
 export class OrderingComponent implements OnDestroy, OnInit {
+
   algorithms = ORDER_ALGORITHMS;
   private _ids = this.algorithms.map(a => a.id);
   model: any = {order: this.algorithms[0].id};

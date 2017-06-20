@@ -1,25 +1,34 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component,
+         ElementRef,
+         OnDestroy,
+         OnInit,
+         ViewChild } from '@angular/core';
 import { FilterService }                from '../../services/filter.service';
 import { UrlQueryParamsService }        from '../../services/url-query-params.service';
+
+declare var $: any;
 
 @Component({
   moduleId: module.id,
   selector: 'app-regexp',
   template: `
-    <form class="navbar-form navbar-left" (ngSubmit)="submit()" #regexpForm="ngForm">
-      <div class="form-group">
+    <form (ngSubmit)="submit()" #regexpForm="ngForm">
+      <div class="input-group">
         <input type="text" class="form-control" id="regexp"
           [(ngModel)]="model.regexp" name="regexp"
           #regexp="ngModel"
           placeholder="e.g. name1|name4|name2" >
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="submit">Filter</button>
+        </span>
       </div>
-      <button type="submit" class="btn btn-default">Filter</button>
     </form>
   `,
-  styles: [ '' ]
+  styles: [ 'form button { margin-right: 0; }' ]
 })
 
 export class RegexpComponent implements OnDestroy, OnInit {
+
   model: any = {regexp: ''};
 
   private _sub: any;

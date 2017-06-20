@@ -155,6 +155,8 @@ GCV.Synteny = class {
     this.options.viewport = this.options.viewport || false;
     this.options.autoResize = this.options.autoResize || false;
     this.options.hoverDelay = this.options.hoverDelay || 500;
+    this.options.highlight = this.options.highlight || [];
+    this.options.colors = this.options.colors || function (s) { return '#000000' };
     if (this.options.contextmenu)
       this.viewer.on('contextmenu', () => {
         this.options.contextmenu(d3.event);
@@ -256,19 +258,21 @@ GCV.Synteny = class {
     */
   _drawTrack(i) {
     var obj = this,
-        c = this._COLORS[i % this._COLORS.length],
-        t = this.data.tracks[i];
+        datum = this.data.tracks[i],
+        name = datum.genus + ' ' + datum.species,
+        c = this.options.colors(name);
     // create the track's rows of blocks
-    this._blocksToRows(t.blocks);
+    this._blocksToRows(datum.blocks);
   	// create the track
     var selector = 'macro-' + i.toString(),
   	    track = this.viewer.append('g')
           .attr('data-macro-track', i.toString())
-          .attr('data-chromosome', this.data.tracks[i].chromosome);
+          .attr('data-chromosome', datum.chromosome)
+          .attr('data-genus-species', datum.genus + ' ' + datum.species);
     track.offset = 0;
     // create the track's blocks
     var blocks = track.selectAll('block')
-  	  .data(t.blocks)
+  	  .data(datum.blocks)
   	  .enter()
       .append('g')
   	  .style('cursor', 'pointer')
@@ -316,7 +320,7 @@ GCV.Synteny = class {
     // draw the blocks
   	var polygons = blocks.append('polygon')
       .attr('class', 'block')
-  	  .style('fill', c)
+  	  .style('fill',  c)
       .attr('points', function (b) {
         var yTop = ((obj._BLOCK_HEIGHT + obj._PAD) * b.y) + obj._PAD,
             yBottom = yTop + obj._BLOCK_HEIGHT,
@@ -328,6 +332,15 @@ GCV.Synteny = class {
           .attr('data-y-middle', yMiddle);
         return genPoints(b, yTop, yBottom, yMiddle);
       });
+    // draw the background highlight
+    if (i % 2) {
+      var box = track.node().getBBox();
+      track.highlight = track.append('rect')
+        .attr('y', obj._PAD)
+        .attr('height', box.height)
+        .attr('fill', '#e7e7e7')
+        .moveToBack();
+    }
     // draw the tooltips
     var tips = blocks.append('text')
       .attr('class', 'synteny-tip')
@@ -365,6 +378,9 @@ GCV.Synteny = class {
         //return 'translate(' + x +', ' + y + ') ' + tip.attr('data-rotate');
         return 'translate(' + x +', ' + y + ') rotate(-45)';
       });
+      if (track.highlight !== undefined) {
+        track.highlight.attr('width', this.viewer.attr('width'));
+      }
     }.bind(this, polygons, tips);
     // how tips are adjusted so they don't overflow the view
     track.adjustTips = function (tips, resize) {
@@ -404,7 +420,12 @@ GCV.Synteny = class {
       .attr('class', 'axis')
       .call(axis);
     yAxis.selectAll('text')
-      .attr('class', function (y, i) { return 'macro-' + i.toString(); })
+      .attr('class', (y, i) => {
+        var cls = 'macro-' + i.toString();
+        if (this.options.highlight.indexOf(this.data.tracks[i].chromosome) != -1)
+          cls += ' bold';
+        return cls;
+      })
   	  .style('cursor', 'pointer')
       .on('mouseover', (y, i) => {
         var iStr = i.toString(),

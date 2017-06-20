@@ -9,9 +9,7 @@ import { AfterViewInit,
          ViewChild } from '@angular/core';
 
 // App
-import { ContextMenuComponent } from './context-menu.component';
-import { DataSaver }            from '../../models/data-saver.model';
-import { MicroTracks }          from '../../models/micro-tracks.model';
+import { DataSaver } from '../../models/data-saver.model';
 
 declare var d3: any;
 declare var GCV: any;
@@ -20,14 +18,25 @@ declare var GCV: any;
   moduleId: module.id,
   selector: 'app-legend',
   template: `
-    <spinner [data]="microTracks"></spinner>
-    <div #legend>
-      <context-menu #menu
-        (saveImage)="saveXMLasSVG(viewer.xml())" >
-      </context-menu>
-    </div>
+    <spinner [data]="data"></spinner>
+    <context-menu #menu
+      title="{{title}}"
+      (saveData)="saveAsJSON(tracks)"
+      (saveImage)="saveXMLasSVG(viewer.xml())" >
+    </context-menu>
+    <div #legend class="viewer"></div>
   `,
-  styles: [ '' ]
+  styles: [`
+    .viewer {
+      position: absolute;
+      top: 28px;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+  `]
 })
 
 export class LegendComponent extends DataSaver
@@ -37,7 +46,8 @@ export class LegendComponent extends DataSaver
 
   // inputs
 
-  @Input() microTracks: MicroTracks;
+  @Input() title: string;
+  @Input() data: any;  // a list of objects with name and id attributes
   @Input() colors: any;
   private _args;
   @Input()
@@ -48,7 +58,6 @@ export class LegendComponent extends DataSaver
   // view children
 
   @ViewChild('legend') el: ElementRef;
-  @ViewChild('menu') contextMenu: ContextMenuComponent;
 
   // variables
 
@@ -63,12 +72,6 @@ export class LegendComponent extends DataSaver
   // Angular hooks
 
   ngOnChanges(changes: SimpleChanges): void {
-    this._args.contextmenu = function (e, m) {
-      this._showContextMenu(e, m);
-    }.bind(this);
-    this._args.click = function (e, m) {
-      this._hideContextMenu(e, m);
-    }.bind(this);
     this._draw();
   }
 
@@ -90,7 +93,7 @@ export class LegendComponent extends DataSaver
   }
 
   private _draw(): void {
-    if (this.el !== undefined && this.microTracks !== undefined) {
+    if (this.el !== undefined && this.data !== undefined) {
       if (this.viewer !== undefined) {
         this.viewer.destroy();
         this.viewer = undefined;
@@ -98,18 +101,9 @@ export class LegendComponent extends DataSaver
       this.viewer = new GCV.Legend(
         this.el.nativeElement,
         this.colors,
-        this.microTracks,
+        this.data,
         this._args
       );
     }
-  }
-
-  private _showContextMenu(e): void {
-    e.preventDefault();
-    this.contextMenu.show(e.layerX, e.layerY);
-  }
-
-  private _hideContextMenu(e): void {
-    this.contextMenu.hide();
   }
 }

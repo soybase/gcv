@@ -110,7 +110,8 @@ DATABASES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'context_viewer_chado',
+        #'NAME': 'context_viewer_chado',
+        'NAME': 'chado_legfed',
         'USER': 'www',
         'PASSWORD': '',
         'HOST': '',

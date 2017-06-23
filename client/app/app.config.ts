@@ -84,7 +84,7 @@ export class AppConfig {
 
   public load(): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.http.get('../config.json').map(res => res.json()).catch((error: any):any => {
+      this.http.get('/cicre_context_viewer/config.json').map(res => res.json()).catch((error: any):any => {
         console.log('Configuration file "config.json" could not be read');
         resolve(true);
         return Observable.throw(error || 'Server error');

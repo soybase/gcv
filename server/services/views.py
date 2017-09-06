@@ -819,6 +819,22 @@ def micro_synteny_search(request):
         return v1_micro_synteny_search(request)
     return HttpResponseBadRequest
 
+def v1_gene_links(request, gene_name):
+    links_json = [];
+    links_json.append({
+        "href" : "https://www.coolseasonfoodlegume.org/feature/Cicer/reticulatum/gene/" + gene_name + "_PI489777_v1",
+        "text" : "View CSFLdb gene page"
+    });
+    links_json.append({
+        "href" : "https://www.coolseasonfoodlegume.org/jbrowse/index.html?data=data%2Fchickpea%2FCr_PI489777_v1a&loc=" + gene_name,
+        "text" : "View in CSFLdb JBrowse"
+    });
+    return HttpResponse(
+        json.dumps(links_json),
+        content_type='application/json; charset=utf8'
+    )
+
+
 
 # returns all the GENES for the given chromosome that have the same family as
 # the query

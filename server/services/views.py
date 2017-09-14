@@ -811,6 +811,21 @@ def micro_synteny_search(request):
         return v1_micro_synteny_search(request)
     return HttpResponseBadRequest
 
+def v1_gene_links(request, gene_name):
+    links_json = [];
+    links_json.append({
+        #adf: note that we're linking directly to the mRNA rather than the gene intentionally for now to facilitate the ICLGG "hunt" and because the regular tripal gene pages would confuse anyone trying to get a spliced version to put into the annotation tool
+        "href" : "https://www.coolseasonfoodlegume.org/feature/Cicer/reticulatum/mRNA/" + gene_name + ".1_PI489777_v1",
+        "text" : "View CSFLdb mRNA page"
+    });
+    links_json.append({
+        "href" : "https://www.coolseasonfoodlegume.org/jbrowse/index.html?data=data%2Fchickpea%2FCr_PI489777_v1a&loc=" + gene_name,
+        "text" : "View in CSFLdb JBrowse"
+    });
+    return HttpResponse(
+        json.dumps(links_json),
+        content_type='application/json; charset=utf8'
+    )
 
 # returns all the GENES for the given chromosome that have the same family as
 # the query

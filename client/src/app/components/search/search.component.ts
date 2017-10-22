@@ -30,7 +30,7 @@ import { MicroTracks }               from '../../models/micro-tracks.model';
 import { microTracksSelector }       from '../../selectors/micro-tracks.selector';
 import { MicroTracksService }        from '../../services/micro-tracks.service';
 import { pairwiseAlignmentSelector } from '../../selectors/pairwise-alignment.selector';
-import { PlotComponent }             from '../shared/plot.component';
+import { PlotViewerComponent }       from '../viewers/plot.component';
 import { plotsSelector }             from '../../selectors/plots.selector';
 import { PlotsService }              from '../../services/plots.service';
 import { SearchParamsComponent }     from './search-params.component';
@@ -114,7 +114,7 @@ export class SearchComponent implements OnInit {
     this._splitViewers();
   }
 
-  @ViewChildren(PlotComponent) plotComponents: QueryList<PlotComponent>;
+  @ViewChildren(PlotViewerComponent) plotComponents: QueryList<PlotViewerComponent>;
 
   @ViewChild(SearchParamsComponent) searchParams: SearchParamsComponent;
 
@@ -229,16 +229,6 @@ export class SearchComponent implements OnInit {
 
       let i = tracks.groups[0].genes.map(g => g.name).indexOf(this.routeGene);
       let focus = tracks.groups[0].genes[i];
-      this.microLegendArgs = {
-        autoResize: true,
-        keyClick: function (f) {
-          this.selectFamily(f);
-        }.bind(this),
-        highlight: [focus != undefined ? focus.family : undefined],
-        selectiveColoring: familySizes,
-        selector: 'family'
-      };
-
       this.macroLegendArgs = {
         autoResize: true,
         highlight: [focus != undefined ? focus.family : undefined],
@@ -299,13 +289,37 @@ export class SearchComponent implements OnInit {
       };
 
       this.microTracks = tracks;
-      var seen = {};
-      var uniqueFamilies = this.microTracks.families.reduce((l, f) => {
-        if (!seen[f.id]) {
-          seen[f.id] = true;
-          l.push(f);
-        } return l;
-      }, []);
+      var orderedUniqueFamilyIds = new Set();
+      this.microTracks.groups.forEach(group => {
+        group.genes.forEach(gene => {
+          orderedUniqueFamilyIds.add(gene.family);
+        });
+      });
+      var familyMap = {};
+      this.microTracks.families.forEach(f => {
+        familyMap[f.id] = f;
+      });
+      var uniqueFamilies = [];
+      orderedUniqueFamilyIds.forEach(id => {
+        if (familyMap[id] !== undefined) uniqueFamilies.push(familyMap[id]);
+      });
+
+      var d = ",";
+      var singletonIds = ["singleton"].concat(uniqueFamilies.filter(f => {
+        return familySizes[f.id] == 1;
+      }).map(f => f.id)).join(d);
+      this.microLegendArgs = {
+        autoResize: true,
+        keyClick: function (f) {
+          this.selectFamily(f);
+        }.bind(this),
+        highlight: [focus != undefined ? focus.family : undefined],
+        selectiveColoring: familySizes,
+        selector: 'family',
+        blank: {name: "Singletons", id: singletonIds},
+        blankDashed: {name: "Orphans", id: ""},
+        multiDelimiter: d
+      };
       var presentFamilies = this.microTracks.groups.reduce((l, group) => {
         return l.concat(group.genes.map(g => g.family));
       }, []);

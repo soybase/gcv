@@ -77,15 +77,7 @@ export class BasicComponent implements OnInit {
   // viewers
   microColors = GCV.common.colors;
 
-  microArgs: any = {
-    geneClick: function (g, track) {
-      this.selectGene(g);
-    }.bind(this),
-    nameClick: function (t) {
-      this.selectTrack(t);
-    }.bind(this),
-    autoResize: true
-  };
+  microArgs: any;
 
   microLegendArgs: any;
 
@@ -102,7 +94,6 @@ export class BasicComponent implements OnInit {
   private _onParams(params): void {
     this.invalidate();
     this.queryGenes = params['genes'].split(',');
-    this.microArgs.highlight = this.queryGenes;
   }
 
   private _onMicroTracks(tracks): void {
@@ -121,6 +112,38 @@ export class BasicComponent implements OnInit {
         .map(g => g.family);
       return l.concat(families);
     }, []);
+    this.microArgs = {
+      geneClick: function (g, track) {
+        this.selectGene(g);
+      }.bind(this),
+      nameClick: function (t) {
+        this.selectTrack(t);
+      }.bind(this),
+      autoResize: true,
+      selectiveColoring: familySizes,
+      highlight: this.queryGenes
+    };
+
+    this.microTracks = tracks;
+    var orderedUniqueFamilyIds = new Set();
+    this.microTracks.groups.forEach(group => {
+      group.genes.forEach(gene => {
+        orderedUniqueFamilyIds.add(gene.family);
+      });
+    });
+    var familyMap = {};
+    this.microTracks.families.forEach(f => {
+      familyMap[f.id] = f;
+    });
+    var uniqueFamilies = [];
+    orderedUniqueFamilyIds.forEach(id => {
+      if (familyMap[id] !== undefined) uniqueFamilies.push(familyMap[id]);
+    });
+
+    var d = ",";
+    var singletonIds = ["singleton"].concat(uniqueFamilies.filter(f => {
+      return familySizes[f.id] == 1;
+    }).map(f => f.id)).join(d);
     this.microLegendArgs = {
       autoResize: true,
       keyClick: function (f) {
@@ -128,17 +151,11 @@ export class BasicComponent implements OnInit {
       }.bind(this),
       highlight: highlight,
       selectiveColoring: familySizes,
-      selector: 'family'
+      selector: 'family',
+      blank: {name: "Singletons", id: singletonIds},
+      blankDashed: {name: "Orphans", id: ""},
+      multiDelimiter: d
     }
-    this.microArgs.selectiveColoring = familySizes;
-    this.microTracks = tracks;
-    var seen = {};
-    var uniqueFamilies = this.microTracks.families.reduce((l, f) => {
-      if (!seen[f.id]) {
-        seen[f.id] = true;
-        l.push(f);
-      } return l;
-    }, []);
     var presentFamilies = this.microTracks.groups.reduce((l, group) => {
       return l.concat(group.genes.map(g => g.family));
     }, []);

@@ -180,7 +180,7 @@ export function frequentedRegions
   }
   // iteratively contract edges in most support first order
   var fr = null;
-  while (Object.keys(g.edges).length > 1) {
+  while (Object.keys(g.edges).length > 0) {
     // find max edge weight
     var maxFR = null,
         maxE  = null;
@@ -191,7 +191,9 @@ export function frequentedRegions
         maxE  = e;
       }
     }
-    fr = maxFR;
+    if (fr == null || fr.nodes.length < maxFR.nodes.length) {
+      fr = maxFR;
+    }
     var [u, v] = maxE.split(g.ed);
     // contract edge
     g.contractEdge(u, v, contractF, updateF);

@@ -22,10 +22,10 @@
     <main-content *ngSwitchCase="contentTypes.VIEWERS">
       <div #left id="left" class="split split-horizontal">
         <div #topLeft id="top-left" class="split content">
-					<macro-viewer
-            [tracks]="macroTracks"
-            [args]="macroArgs" >
-            <li><form>
+					<viewer-macro
+            [data]="macroTracks"
+            [arguments]="macroArgs" >
+            <li dropdown><form>
               <div class="checkbox">
                 <label>
                   <input type="checkbox" [checked]="macroConfig.order" (change)="toggleMacroOrder()"> Micro-synteny ordering
@@ -37,14 +37,14 @@
                 </label>
               </div>
             </form></li>
-					</macro-viewer>
+					</viewer-macro>
 				</div>
         <div #bottomLeft id="bottom-left" class="split content">
-					<micro-viewer
-            [tracks]="microTracks"
+					<viewer-micro
+            [data]="microTracks"
             [colors]="microColors"
-            [args]="microArgs" >
-      			<ul class="nav navbar-nav accordion">
+            [arguments]="microArgs" >
+      			<ul navbar class="nav navbar-nav accordion">
       			  <li [ngClass]="{'active': accordion==accordionTypes.SEARCH}">
                 <a (click)="setAccordion($event, accordionTypes.SEARCH)">
                 &nbsp;<span class="glyphicon glyphicon-search" aria-hidden="true"></span>&nbsp;
@@ -79,60 +79,65 @@
                 <scroll [gene]="routeGene" [query]="queryGenes" ></scroll>
               </li>
 						</ul>
-					</micro-viewer>
+					</viewer-micro>
 				</div>
       </div>
       <div #right id="right" class="split split-horizontal">
         <div #topRight id="top-right" class="split content">
           <div class="legend" *ngIf="macroColors">
-  				  <app-legend
-              [title]="'Macro Legend'"
+  				  <viewer-legend
   				    [data]="macroLegend"
   				    [colors]="macroColors"
-  				    [args]="macroLegendArgs" >
-  				  </app-legend>
+  				    [arguments]="macroLegendArgs" >
+  				  </viewer-legend>
           </div>
         </div>
         <div #bottomRight id="bottom-right" class="split content">
   				<!-- micro legend -->
           <div class="legend">
             <div class="vertical-fill">
-  				    <app-legend
-                [title]="'Micro Legend'"
+  				    <viewer-legend
   				      [data]="microLegend"
   				      [colors]="microColors"
-  				      [args]="microLegendArgs" >
-  				    </app-legend>
+  				      [arguments]="microLegendArgs" >
+  				    </viewer-legend>
             </div>
   				  <!-- local and global dot plots -->
   				  <div class="local-global-plots" *ngIf="showLocalGlobalPlots">
-              <context-menu [title]="'Dot Plots'" >
-  				      <ul class="nav navbar-nav tabs" navbar>
-  				        <li [ngClass]="{'active': selectedPlot==plotTypes.LOCAL}">
-  				          <a (click)="showLocalPlot()">Local</a>
-  				        </li>
-  				        <li [ngClass]="{'active': selectedPlot==plotTypes.GLOBAL}">
-  				          <a (click)="showGlobalPlot()">Global</a>
-  				        </li>
-  				      </ul>
-  				      <ul class="nav navbar-nav navbar-right" navbar>
-  				        <li>
-  				          <a><span class="glyphicon glyphicon-remove" aria-hidden="true" (click)="hideLocalGlobalPlots()"></span></a>
-  				        </li>
-  				      </ul>
-              </context-menu>
   				    <div class="outer-ratio">
   				      <div class="inner-ratio" [ngSwitch]="selectedPlot">
-  				        <plot *ngSwitchCase="plotTypes.LOCAL"
-  				          [plot]="selectedLocal"
+  				        <viewer-plot *ngSwitchCase="plotTypes.LOCAL"
+  				          [data]="selectedLocal"
   				          [colors]="microColors"
-  				          [args]="plotArgs" >
-  				        </plot>
-  				        <plot *ngSwitchCase="plotTypes.GLOBAL"
-  				          [plot]="selectedGlobal"
+  				          [arguments]="plotArgs" >
+  				          <ul class="nav navbar-nav tabs" navbar>
+  				            <li [ngClass]="{'active': selectedPlot==plotTypes.LOCAL}">
+  				              <a (click)="showLocalPlot()">Local</a>
+  				            </li>
+  				            <li [ngClass]="{'active': selectedPlot==plotTypes.GLOBAL}">
+  				              <a (click)="showGlobalPlot()">Global</a>
+  				            </li>
+  				          </ul>
+  				          <li navright>
+  				            <a><span class="glyphicon glyphicon-remove" aria-hidden="true" (click)="hideLocalGlobalPlots()"></span></a>
+  				          </li>
+  				        </viewer-plot>
+  				        <viewer-plot *ngSwitchCase="plotTypes.GLOBAL"
+  				          [data]="selectedGlobal"
   				          [colors]="microColors"
-  				          [args]="plotArgs" >
-  				        </plot>
+  				          [arguments]="plotArgs" >
+  				          <ul class="nav navbar-nav tabs" navbar>
+  				            <li [ngClass]="{'active': selectedPlot==plotTypes.LOCAL}">
+  				              <a (click)="showLocalPlot()">Local</a>
+  				            </li>
+  				            <li [ngClass]="{'active': selectedPlot==plotTypes.GLOBAL}">
+  				              <a (click)="showGlobalPlot()">Global</a>
+  				            </li>
+  				          </ul>
+  				          <li navright>
+  				            <a><span class="glyphicon glyphicon-remove" aria-hidden="true" (click)="hideLocalGlobalPlots()"></span></a>
+  				          </li>
+  				        </viewer-plot>
   				      </div>
   				    </div>
 					  </div>
@@ -145,12 +150,12 @@
     <main-content *ngSwitchCase="contentTypes.PLOTS">
       <div class="plots" (scroll)="drawPlots()">
         <div class="plot col-sm-6 col-md-4" *ngFor="let p of microPlots">
-          <plot
-            [plot]="p"
+          <viewer-plot
+            [data]="p"
             [colors]="microColors"
-            [args]="plotArgs"
+            [arguments]="plotArgs"
             [visibleDraw]="true" >
-          </plot>
+          </viewer-plot>
         </div>
       </div>
     </main-content>

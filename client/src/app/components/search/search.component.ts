@@ -1,7 +1,8 @@
 // Angular + dependencies
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject }        from 'rxjs/BehaviorSubject';
-import { Component,
+import { AfterViewInit,
+         Component,
          ElementRef,
          OnInit,
          QueryList,
@@ -30,7 +31,7 @@ import { MicroTracks }               from '../../models/micro-tracks.model';
 import { microTracksSelector }       from '../../selectors/micro-tracks.selector';
 import { MicroTracksService }        from '../../services/micro-tracks.service';
 import { pairwiseAlignmentSelector } from '../../selectors/pairwise-alignment.selector';
-import { PlotComponent }             from '../shared/plot.component';
+import { PlotViewerComponent }       from '../viewers/plot.component';
 import { plotsSelector }             from '../../selectors/plots.selector';
 import { PlotsService }              from '../../services/plots.service';
 import { SearchParamsComponent }     from './search-params.component';
@@ -63,7 +64,7 @@ enum AccordionTypes {
   encapsulation: ViewEncapsulation.None
 })
 
-export class SearchComponent implements OnInit {
+export class SearchComponent implements AfterViewInit, OnInit {
   // view children
 
   // EVIL: ElementRefs nested in switch cases are undefined when parent or child
@@ -114,7 +115,7 @@ export class SearchComponent implements OnInit {
     this._splitViewers();
   }
 
-  @ViewChildren(PlotComponent) plotComponents: QueryList<PlotComponent>;
+  @ViewChildren(PlotViewerComponent) plotComponents: QueryList<PlotViewerComponent>;
 
   @ViewChild(SearchParamsComponent) searchParams: SearchParamsComponent;
 
@@ -229,16 +230,6 @@ export class SearchComponent implements OnInit {
 
       let i = tracks.groups[0].genes.map(g => g.name).indexOf(this.routeGene);
       let focus = tracks.groups[0].genes[i];
-      this.microLegendArgs = {
-        autoResize: true,
-        keyClick: function (f) {
-          this.selectFamily(f);
-        }.bind(this),
-        highlight: [focus != undefined ? focus.family : undefined],
-        selectiveColoring: familySizes,
-        selector: 'family'
-      };
-
       this.macroLegendArgs = {
         autoResize: true,
         highlight: [focus != undefined ? focus.family : undefined],
@@ -299,13 +290,37 @@ export class SearchComponent implements OnInit {
       };
 
       this.microTracks = tracks;
-      var seen = {};
-      var uniqueFamilies = this.microTracks.families.reduce((l, f) => {
-        if (!seen[f.id]) {
-          seen[f.id] = true;
-          l.push(f);
-        } return l;
-      }, []);
+      var orderedUniqueFamilyIds = new Set();
+      this.microTracks.groups.forEach(group => {
+        group.genes.forEach(gene => {
+          orderedUniqueFamilyIds.add(gene.family);
+        });
+      });
+      var familyMap = {};
+      this.microTracks.families.forEach(f => {
+        familyMap[f.id] = f;
+      });
+      var uniqueFamilies = [];
+      orderedUniqueFamilyIds.forEach(id => {
+        if (familyMap[id] !== undefined) uniqueFamilies.push(familyMap[id]);
+      });
+
+      var d = ",";
+      var singletonIds = ["singleton"].concat(uniqueFamilies.filter(f => {
+        return familySizes[f.id] == 1;
+      }).map(f => f.id)).join(d);
+      this.microLegendArgs = {
+        autoResize: true,
+        keyClick: function (f) {
+          this.selectFamily(f);
+        }.bind(this),
+        highlight: [focus != undefined ? focus.family : undefined],
+        selectiveColoring: familySizes,
+        selector: 'family',
+        blank: {name: "Singletons", id: singletonIds},
+        blankDashed: {name: "Orphans", id: ""},
+        multiDelimiter: d
+      };
       var presentFamilies = this.microTracks.groups.reduce((l, group) => {
         return l.concat(group.genes.map(g => g.family));
       }, []);
@@ -352,6 +367,10 @@ export class SearchComponent implements OnInit {
 
     // subscribe to parameter changes
     this._route.params.subscribe(this._onParams.bind(this));
+  }
+
+  ngAfterViewInit(): void {
+    // don't subscribe to data until view loaded so drawing doesn't fail
 
     // subscribe to micro-tracks changes
     this._microTracksService.tracks.subscribe(this._onRawMicroTracks.bind(this));

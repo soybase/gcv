@@ -19,7 +19,7 @@ export class Plot extends Visualizer {
   private yScale: any;
 
   // Constants
-  private readonly RADIUS = 3.5;
+  private RADIUS: number;
 
   /** Resizes the viewer and x scale. Will be decorated by other components. */
   protected resize() {
@@ -42,22 +42,26 @@ export class Plot extends Visualizer {
     */
   protected init(el, colors, data, options) {
     super.init(el, colors, data);
-    this.top = this.PAD;
-    this.left = this.PAD;
+    this.RADIUS = 3.5;
+    this.top    = this.PAD;
+    this.left   = this.PAD;
     this.bottom = this.PAD;
-    this.right = this.PAD + this.RADIUS;
+    this.right  = this.PAD + this.RADIUS;
     // create the scales used to plot genes
     this.xScale = d3.scale.linear();
     this.yScale = d3.scale.linear();
     // parse optional parameters
-    this.options = Object.assign({}, options);
+    this.options                   = Object.assign({}, options);
     this.options.selectiveColoring = this.options.selectiveColoring;
-    this.options.geneClick = this.options.geneClick || function (selection) { };
-    this.options.plotClick = this.options.plotClick || function (plot) { };
-    this.options.brushup = this.options.brushup || function (brushed) { };
-    this.options.autoResize = this.options.autoResize || false;
-    this.options.outlier = this.options.outlier || undefined;
-    this.options.hoverDelay = this.options.hoverDelay || 500;
+    this.options.geneClick         = this.options.geneClick ||
+      function (selection) { };
+    this.options.plotClick         = this.options.plotClick ||
+      function (plot) { };
+    this.options.brushup           = this.options.brushup ||
+      function (brushed) { };
+    this.options.autoResize        = this.options.autoResize || false;
+    this.options.outlier           = this.options.outlier || undefined;
+    this.options.hoverDelay        = this.options.hoverDelay || 500;
     if (this.options.contextmenu)
       this.viewer.on('contextmenu', () => {
         this.options.contextmenu(d3.event);
@@ -326,11 +330,8 @@ export class Plot extends Visualizer {
     function resetAxis() {
     	xAxis.axis.tickValues(obj.xScale.domain().map(Math.trunc));
       xAxis.transition().duration(500).call(xAxis.axis)
-        .selectAll('.tick text')
-        .style('text-anchor', (t, i) => {
-          if (i % 2 == 0) return 'start';
-          return 'end';
-        });
+        .selectAll('.tick:last-of-type text')
+        .style('text-anchor', 'end');
     }
     return clearButton;
   }
@@ -393,6 +394,7 @@ export class Plot extends Visualizer {
         this.resize();
       });
     }
+    this.resize();
   }
   
   // Public

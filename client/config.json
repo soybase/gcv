@@ -96,7 +96,7 @@
     },
     "geneLinks": {
       "type": "GET",
-      "url": "https://legumeinfo.org/gene_links/"
+      "url": "/cicre_context_server/services/v1/gene-links/"
     },
     "plotGlobal": {
       "type": "POST",

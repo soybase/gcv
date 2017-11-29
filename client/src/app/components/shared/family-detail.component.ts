@@ -20,6 +20,13 @@ import { MicroTracks }    from '../../models/micro-tracks.model';
     <!-- it's here when legumemine is ready for it...
     <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
     -->
+    <!-- or, for the posted version...
+    <form action="https://intermine.legumefederation.org/legumemine/bag.do" method="POST">
+         <input type="hidden" name="type" value="Gene"/>
+         <input type="hidden" name="text" value="{{geneListFormatted}}"/>
+         <input type="submit" name="submit" value="Create gene list in LegumeMine"/>
+    </form>
+    -->
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of genes">

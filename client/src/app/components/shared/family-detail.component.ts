@@ -17,9 +17,7 @@ import { MicroTracks }    from '../../models/micro-tracks.model';
     <h4>{{family.name}}</h4>
     <p><a href="#/multi/{{geneList}}">View genes in multi-alignment view</a></p>
     <p *ngIf="linkablePhylo"><a href="/chado_gene_phylotree_v2?family={{family.name}}&gene_name={{geneList}}">View genes in phylogram</a></p>
-    <!-- it's here when legumemine is ready for it...
     <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
-    -->
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of genes">

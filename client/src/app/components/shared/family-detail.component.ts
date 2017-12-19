@@ -18,6 +18,13 @@ import { MicroTracks }    from '../../models/micro-tracks.model';
     <p><a href="#/multi/{{geneList}}">View genes in multi-alignment view</a></p>
     <p *ngIf="linkablePhylo"><a href="/chado_gene_phylotree_v2?family={{family.name}}&gene_name={{geneList}}">View genes in phylogram</a></p>
     <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
+    <!-- or, for the posted version... (though this didn't seem to work in the angular context)
+    <form action="https://intermine.legumefederation.org/legumemine/bag.do" method="POST">
+         <input type="hidden" name="type" value="Gene"/>
+         <input type="hidden" name="text" value="{{geneListFormatted}}"/>
+         <input type="submit" name="submit" value="Create gene list in LegumeMine"/>
+    </form>
+    -->
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of genes">

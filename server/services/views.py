@@ -200,7 +200,7 @@ def v1_micro_synteny_basic(request):
             focus_loc = focus_loc_map[gene.pk]
             srcfeature = srcfeature_map[focus_loc.srcfeature_id]
             organism = organism_map[gene.organism_id]
-            family_id = family_map[gene.pk]
+            family_id = "" if gene.pk not in family_map else family_map[gene.pk]
             if len(family_id) > 0:
                 focus_family_id = family_id
                 if family_id not in families:
@@ -335,7 +335,7 @@ def v1_gene_to_query_track(request):
                 str(floc.fmin) + ', "fmax":' + str(floc.fmax) + ', "strand":' +
                 str(floc.strand) + ', "x":' + str(i) + ', "y":0}')
             query_align.append((g, family))
-        query_group = ('{"species_name":"' + organism.genus[0] + '.' +
+        query_group = ('{"genus":"' + organism.genus + '", "species":"' +
             organism.species + '", "species_id":' + str(organism.pk) +
             ', "chromosome_name":"' + chromosome.name + '", "chromosome_id":' +
             str(chromosome.pk) + ', "genes":[' + ','.join(genes) + ']}')
@@ -374,7 +374,7 @@ def v1_micro_synteny_search(request):
         non_family = POST['intermediate']
         try:
             non_family = int(non_family)
-            if non_family <= 0:
+            if non_family < 0:
                 raise ValueError("intermediate can't be negative")
         except:
             return HttpResponseBadRequest

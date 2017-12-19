@@ -31,8 +31,8 @@ import { urlQueryParams }     from './reducers/url-query-params.store';
 
 // App components
 import { AppComponent }          from './app.component';
-import { BasicComponent }        from './components/basic/basic.component';
-import { BasicParamsComponent }  from './components/basic/basic-params.component';
+import { MultiComponent }        from './components/multi/multi.component';
+import { MultiParamsComponent }  from './components/multi/multi-params.component';
 import { ContextMenuComponent }  from './components/shared/context-menu.component';
 import { FamilyDetailComponent } from './components/shared/family-detail.component';
 import { GeneDetailComponent }   from './components/shared/gene-detail.component';
@@ -47,7 +47,7 @@ import { MainComponent }         from './components/shared/main.component';
 import { MainContentComponent }  from './components/shared/main-content.component';
 import { MicroViewerComponent }  from './components/viewers/micro.component';
 import { NavComponent }          from './components/shared/nav.component';
-import { OrderingComponent }     from './components/search/ordering.component';
+import { OrderingComponent }     from './components/shared/ordering.component';
 import { PlotViewerComponent }   from './components/viewers/plot.component';
 import { RegexpComponent }       from './components/shared/regexp.component';
 import { ScrollComponent }       from './components/search/scroll.component';
@@ -100,8 +100,8 @@ import { UrlQueryParamsService } from './services/url-query-params.service';
   declarations: [
     // App components
     AppComponent,
-    BasicComponent,
-    BasicParamsComponent,
+    MultiComponent,
+    MultiParamsComponent,
     ContextMenuComponent,
     FamilyDetailComponent,
     GeneDetailComponent,

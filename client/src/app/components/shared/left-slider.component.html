@@ -19,7 +19,7 @@
       [family]="family"
       [tracks]="tracks" >
     </family-detail>
-    <gene-detail *ngSwitchCase="detailTypes.GENE" [gene]="gene"></gene-detail>
+    <gene-detail *ngSwitchCase="detailTypes.GENE" [gene]="gene" [group]="group" [tracks]="tracks"></gene-detail>
     <track-detail *ngSwitchCase="detailTypes.TRACK" [track]="track"></track-detail>
 	</div>
 </div>

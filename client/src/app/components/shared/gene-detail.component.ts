@@ -17,7 +17,10 @@ import { Group }    from '../../models/group.model';
     <spinner [data]="links"></spinner>
     <h4>{{gene.name}}</h4>
     <!-- FIXME: the substring is to strip off prefix in context of peanut annotation evaluation. should remove it later-->
-    <p><a href="http://localhost:60151/goto?locus={{group.chromosome_name.substring(group.chromosome_name.indexOf('.')+1)}}:{{gene.fmin-500}}-{{gene.fmax+500}} {{tracks.groups[0].chromosome_name.substring(tracks.groups[0].chromosome_name.indexOf('.')+1)}}:{{alignedQueryGene.fmin-500}}-{{alignedQueryGene.fmax+500}}">View {{gene.name}} and {{alignedQueryGene.name}} in IGV</a></p>
+    <p *ngIf="alignedQueryGene"><a href="http://localhost:60151/goto?locus={{group.chromosome_name.substring(group.chromosome_name.indexOf('.')+1)}}:{{gene.fmin-500}}-{{gene.fmax+500}} {{tracks.groups[0].chromosome_name.substring(tracks.groups[0].chromosome_name.indexOf('.')+1)}}:{{alignedQueryGene.fmin-500}}-{{alignedQueryGene.fmax+500}}">View {{gene.name}} and {{alignedQueryGene.name}} in IGV</a></p>
+    <!--FIXME: seems like the version of angular we're using doesn't support else, but newer versions do-->
+    <p *ngIf="! alignedQueryGene"><a href="http://localhost:60151/goto?locus={{group.chromosome_name.substring(group.chromosome_name.indexOf('.')+1)}}:{{gene.fmin-500}}-{{gene.fmax+500}}">View {{gene.name}} in IGV</a>
+    </p>
     <p>Family: <a href="http://legumeinfo.org/chado_gene_phylotree_v2?family={{gene.family}}&gene_name={{gene.name}}">{{gene.family}}</a></p>
     <p><a href="#/search/{{gene.source}}/{{gene.name}}">Search for similar contexts</a></p>
     <ul>
@@ -53,6 +56,7 @@ export class GeneDetailComponent implements OnChanges {
         this.alignedQueryGene = queryGenes.find(function(g){return g.x==alignmentColumn;});
         if (this.gene.name == this.alignedQueryGene.name) {
             this.alignedQueryGene = undefined;
+            this.group = this.tracks.groups[0];
         }
         else {
             var gene = this.gene;

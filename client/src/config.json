@@ -20,7 +20,7 @@
     },
     "macro": {
       "type": "POST",
-      "url": "/lis_context_server/services/v1/macro-synteny/"
+      "url": "/lis_context_server/services/v1_1/macro-synteny/"
     },
     "geneLinks": {
       "type": "GET",
@@ -33,6 +33,10 @@
     "nearestGene": {
       "type": "POST",
       "url": "/lis_context_server/services/v1/nearest-gene/"
+    },
+    "chromosome": {
+      "type": "POST",
+      "url": "/lis_context_server/services/v1_1/chromosome/"
     }
   }
 ]}

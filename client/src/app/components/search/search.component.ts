@@ -199,18 +199,34 @@ export class SearchComponent implements AfterViewInit, OnInit {
   }
 
   private _onParams(params): void {
-    this.invalidate();
+    this.invalidateAll();
     this.hideLocalGlobalPlots();
     this.routeSource = params['source'];
     this.routeGene = params['gene'];
   }
 
-  private _onRawMicroTracks(tracks): void {
-    this._numReturned = tracks.groups.length - 1;  // exclude query
+  private _onSearchQuery([query, blockParams]): void {
     let params = this.searchParams.queryGroup
     if (params !== undefined) {
-      this._macroTracksService.search(tracks, params.getRawValue());
+      //this.invalidateMicro();
+      this.invalidateMacro();
+      this._macroTracksService.getChromosome(
+        query.source,
+        query.chromosome_name,
+        chromosome => {
+          this._macroTracksService.federatedSearch(
+            query.chromosome_name,
+            chromosome,
+            params.getRawValue(),
+            blockParams
+          );
+        }
+      );
     }
+  }
+
+  private _onRawMicroTracks(tracks): void {
+    this._numReturned = tracks.groups.length - 1;  // exclude query
   }
 
 
@@ -372,6 +388,12 @@ export class SearchComponent implements AfterViewInit, OnInit {
   ngAfterViewInit(): void {
     // don't subscribe to data until view loaded so drawing doesn't fail
 
+    // subscribe to query changes
+    Observable.combineLatest(
+      this._microTracksService.query,
+      this._macroTracksService.params
+    ).subscribe(this._onSearchQuery.bind(this));
+
     // subscribe to micro-tracks changes
     this._microTracksService.tracks.subscribe(this._onRawMicroTracks.bind(this));
     this._alignedTracks = Observable.combineLatest(
@@ -490,10 +512,22 @@ export class SearchComponent implements AfterViewInit, OnInit {
 
   // public
 
-  invalidate(): void {
-    this.microTracks = this.microLegend = undefined;
+  invalidateMacro(): void {
     this.macroTracks = this.macroLegend = undefined;
+  }
+
+  invalidateMicro(): void {
+    this.microTracks = this.microLegend = undefined;
+  }
+
+  invalidatePlots(): void {
     this.microPlots = undefined;
+  }
+
+  invalidateAll(): void {
+    this.invalidateMacro();
+    this.invalidateMicro();
+    this.invalidatePlots();
   }
 
   // micro-synteny

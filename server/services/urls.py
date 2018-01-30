@@ -37,5 +37,12 @@ urlpatterns = patterns('services.views',
     # genomic location to nearest gene
     url(r'^v1/nearest-gene/$', 'v1_nearest_gene'),
     #gene links
-    url(r'^v1/gene-links/cicre.(?P<gene_name>[^\/]+)/json', 'v1_gene_links')
+    url(r'^v1/gene-links/cicre.(?P<gene_name>[^\/]+)/json', 'v1_gene_links'),
+
+    # v1.1
+
+    # chromosome
+    url(r'^v1_1/chromosome/$', 'v1_1_chromosome'),
+    # macro-synteny
+    url(r'^v1_1/macro-synteny/$', 'v1_1_macro_synteny'),
 )

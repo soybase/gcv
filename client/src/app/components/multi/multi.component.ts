@@ -28,17 +28,18 @@ import { MicroTracksService }        from '../../services/micro-tracks.service';
 
 enum AccordionTypes {
   REGEXP,
+  ORDER
 }
 
 @Component({
   moduleId: module.id.toString(),
-  selector: 'basic',
-  templateUrl: 'basic.component.html',
-  styleUrls: [ 'basic.component.css' ],
+  selector: 'multi',
+  templateUrl: 'multi.component.html',
+  styleUrls: [ 'multi.component.css' ],
   encapsulation: ViewEncapsulation.None
 })
 
-export class BasicComponent implements AfterViewInit, OnInit {
+export class MultiComponent implements AfterViewInit, OnInit {
   // view children
 
   // EVIL: ElementRefs nested in switch cases are undefined when parent or child
@@ -144,7 +145,7 @@ export class BasicComponent implements AfterViewInit, OnInit {
 
       var d = ",";
       var singletonIds = ["singleton"].concat(uniqueFamilies.filter(f => {
-        return familySizes[f.id] == 1;
+        return familySizes === undefined || familySizes[f.id] == 1;
       }).map(f => f.id)).join(d);
       this.microLegendArgs = {
         autoResize: true,
@@ -183,7 +184,8 @@ export class BasicComponent implements AfterViewInit, OnInit {
     ).let(frequentedRegionsSelector());
     this._microTracks = Observable.combineLatest(
       this._groupedTracks,
-      this._filterService.regexp
+      this._filterService.regexp,
+      this._filterService.order
     ).let(microTracksSelector());
     this._microTracks.subscribe(this._onMicroTracks.bind(this));
   }
@@ -212,7 +214,7 @@ export class BasicComponent implements AfterViewInit, OnInit {
   // micro-synteny
   setAccordion(e: any, value: any): void {
     e.stopPropagation();
-    this.accordion = this.accordion == value ? null : value;
+    this.accordion = (this.accordion == value) ? null : value;
   }
 
   // left slider

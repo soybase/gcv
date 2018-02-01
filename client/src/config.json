@@ -60,7 +60,7 @@
     },
     "macro": {
       "type": "POST",
-      "url": "https://localhost:8889/lis_context_server/services/v1_1/macro-synteny/"
+      "url": "https://legumeinfo.org/lis_context_server/services/v1_1/macro-synteny/"
     },
     "geneLinks": {
       "type": "GET",
@@ -76,7 +76,7 @@
     },
     "chromosome": {
       "type": "POST",
-      "url": "https://localhost:8889/lis_context_server/services/v1_1/chromosome/"
+      "url": "https://legumeinfo.org/lis_context_server/services/v1_1/chromosome/"
     }
   },
   {
@@ -117,6 +117,46 @@
     "chromosome": {
       "type": "POST",
       "url": "/cicre_context_server/services/v1_1/chromosome/"
+    }
+  },
+  {
+    "id": "medsa",
+    "name": "2x cultivated Alfalfa (CADL)",
+    "macroColors": {
+      "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+      "functionName": "taxonChroma.get"
+    },
+    "microBasic": {
+      "type": "POST",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/micro-synteny-basic/"
+    },
+    "microSearch": {
+      "type": "POST",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/micro-synteny-search/"
+    },
+    "microQuery": {
+      "type": "POST",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/gene-to-query-track/"
+    },
+    "macro": {
+      "type": "POST",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1_1/macro-synteny/"
+    },
+    "geneLinks": {
+      "type": "GET",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/gene-links/"
+    },
+    "plotGlobal": {
+      "type": "POST",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/global-plots/"
+    },
+    "nearestGene": {
+      "type": "POST",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/nearest-gene/"
+    },
+    "chromosome": {
+      "type": "POST",
+      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1_1/chromosome/"
     }
   }
 ]}

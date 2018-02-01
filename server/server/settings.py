@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = '(#*RB873479b*&^@#'
 
 # allow cross origin requests
 CORS_ORIGIN_ALLOW_ALL = True
@@ -49,7 +49,7 @@ if socket.gethostname()[0:4] == 'lis-':
     ALLOWED_HOSTS = [socket.gethostname(), 'localhost']
 else:
     #ALLOWED_HOSTS = [socket.gethostname(), 'legumeinfo.org']
-    ALLOWED_HOSTS = [socket.gethostname(), 'legumeinfo.org', 'localhost']
+    ALLOWED_HOSTS = [socket.gethostname(), 'laasi.ncgr.org', 'localhost']
 
 
 # Application definition
@@ -110,11 +110,13 @@ DATABASES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ['PGNAME'],
-        'USER': os.environ['PGUSER'],
-        'PASSWORD': os.environ['PGPASSWORD'],
-        'HOST': os.environ['PGHOST'],
-        'PORT': os.environ['PGPORT'],
+        'NAME': 'chado_cadl',
+        'USER': 'chado_readonly',
+        'PASSWORD': 'G1v3P3@sCh@nc3',
+        'HOST': 'localhost',	
+	#breaks due to permissions errors on domain sockets
+        #'HOST': '',
+        'PORT': '5432',
     }
 }
 
@@ -165,7 +167,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'errors.log'),
+            'filename': os.path.join('/tmp', 'errors.log'),
         },
     },
     'loggers': {

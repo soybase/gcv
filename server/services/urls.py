@@ -35,5 +35,7 @@ urlpatterns = patterns('services.views',
     # macro-synteny
     url(r'^v1/macro-synteny/$', 'v1_macro_synteny'),
     # genomic location to nearest gene
-    url(r'^v1/nearest-gene/$', 'v1_nearest_gene')
+    url(r'^v1/nearest-gene/$', 'v1_nearest_gene'),
+    # gene links
+    url(r'^v1/gene-links/medsa.CADL_HM342.v1_0.(?P<gene_name>[^\/]+)/json', 'v1_gene_links')
 )

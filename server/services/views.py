@@ -810,6 +810,17 @@ def micro_synteny_search(request):
         return v1_micro_synteny_search(request)
     return HttpResponseBadRequest
 
+def v1_gene_links(request, gene_name):
+    links_json = [];
+    links_json.append({
+        "href" : "https://www.alfalfatoolbox.org/feature/Medicago/sativa/gene/" + gene_name,
+        "text" : "View Alfalfa Breeder's Toolbox gene page"
+    });
+    return HttpResponse(
+        json.dumps(links_json),
+        content_type='application/json; charset=utf8'
+    )
+
 
 # returns all the GENES for the given chromosome that have the same family as
 # the query

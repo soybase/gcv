@@ -17,6 +17,9 @@ export const urlQueryParams = (state: any = Object.create(UrlQueryParams.prototy
         for (let prop in source) {
           if (source.hasOwnProperty(prop)) {
             switch(prop) {
+              case 'bmatched':
+              case 'bintermediate':
+              case 'bmask':
               case 'neighbors':
               case 'matched':
               case 'intermediate':
@@ -33,7 +36,7 @@ export const urlQueryParams = (state: any = Object.create(UrlQueryParams.prototy
                 break;
               case 'alpha':
                 let y = parseFloat(source[prop]);
-                if (Number(y) === y && y % 1 !== 0) target[prop] = y;
+                if (Number(y) === y && y > 0 && y <= 1) target[prop] = y;
                 break;
               case 'sources':
                 let sources = [];

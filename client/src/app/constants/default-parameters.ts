@@ -10,7 +10,7 @@ export const enum DefaultQueryParams {
   DEFAULT_NEIGHBORS    = 20,
   DEFAULT_MATCHED      = 4,
   DEFAULT_INTERMEDIATE = 5,
-  DEFAULT_SOURCE       = 'lfo'
+  DEFAULT_SOURCE       = 'lis'
 }
 
 // alignment parameters

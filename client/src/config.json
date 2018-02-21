@@ -46,7 +46,7 @@
       "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
       "functionName": "taxonChroma.get"
     },
-    "microBasic": {
+    "microMulti": {
       "type": "POST",
       "url": "/lis_context_server/services/v1/micro-synteny-basic/"
     },
@@ -86,7 +86,7 @@
       "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
       "functionName": "taxonChroma.get"
     },
-    "microBasic": {
+    "microMulti": {
       "type": "POST",
       "url": "/cicre_context_server/services/v1/micro-synteny-basic/"
     },
@@ -126,7 +126,7 @@
       "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
       "functionName": "taxonChroma.get"
     },
-    "microBasic": {
+    "microMulti": {
       "type": "POST",
       "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/micro-synteny-basic/"
     },

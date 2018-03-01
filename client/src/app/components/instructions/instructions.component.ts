@@ -1,4 +1,8 @@
+//Angular
 import { Component } from '@angular/core';
+
+//App
+import { GeneSearchComponent } from '../search/gene-search.component';
 
 @Component({
   moduleId: module.id.toString(),

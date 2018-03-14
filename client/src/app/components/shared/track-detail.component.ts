@@ -13,7 +13,7 @@ import { Group }          from '../../models/group.model';
   template: `
     <h4>{{track.genus[0]}}.{{track.species}} - {{track.chromosome_name}}</h4>
     <p><a href="#/search/{{track.source}}/{{focus}}">Search for similar contexts</a></p>
-    <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
+    <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?subtab=upload&type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of track.genes">

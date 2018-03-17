@@ -49,7 +49,7 @@ export class GeneDetailComponent implements OnChanges {
         var queryGenes = this.tracks.groups[0].genes;       
         var alignmentColumn = this.gene.x;
         this.alignedQueryGene = queryGenes.find(function(g){return g.x==alignmentColumn;});
-        if (this.gene.name == this.alignedQueryGene.name) {
+        if (this.alignedQueryGene !== undefined && this.gene.name == this.alignedQueryGene.name) {
             this.alignedQueryGene = undefined;
         }
       }

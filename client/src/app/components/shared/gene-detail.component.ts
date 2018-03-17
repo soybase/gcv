@@ -17,12 +17,12 @@ import { MicroTracks } from '../../models/micro-tracks.model';
     <h4>{{gene.name}}</h4>
     <p>Family: <a href="http://legumeinfo.org/chado_gene_phylotree_v2?family={{gene.family}}&gene_name={{gene.name}}">{{gene.family}}</a></p>
     <p><a href="#/search/{{gene.source}}/{{gene.name}}">Search for similar contexts</a></p>
-    <p><a *ngIf="alignedQueryGene" href="http://genomevolution.org/CoGe/GEvo.pl?accn1={{alignedQueryGene.name}};dr1up=50000;dr1down=50000;accn2={{gene.name}};dr2up=50000;dr2down=50000;num_seqs=2">CoGe: align regions surrounding {{gene.name}} and {{alignedQueryGene.name}}</a></p>
     <ul>
       <li *ngFor="let link of links">
         <a href="{{link.href}}">{{link.text}}</a>
       </li>
     </ul>
+    <p><a *ngIf="alignedQueryGene" href="http://genomevolution.org/CoGe/GEvo.pl?accn1={{alignedQueryGene.name}};dr1up=50000;dr1down=50000;accn2={{gene.name}};dr2up=50000;dr2down=50000;num_seqs=2">CoGe: align regions surrounding {{gene.name}} and {{alignedQueryGene.name}}</a></p>
   `,
   styles: [ '' ]
 })

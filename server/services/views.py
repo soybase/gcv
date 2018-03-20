@@ -1191,3 +1191,16 @@ def v1_1_macro_synteny(request):
             content_type='application/json; charset=utf8'
         )
     return HttpResponseBadRequest()
+
+
+def v1_gene_links(request, gene_name):
+    links_json = [];
+    links_json.append({
+        "href" : "https://www.alfalfatoolbox.org/feature/Medicago/sativa/gene/"+gene_name,
+        "text" : "View Alfalfa Breeder's Toolbox gene page"
+    });
+    return HttpResponse(
+        json.dumps(links_json),
+        content_type='application/json; charset=utf8'
+    )
+    return HttpResponseBadRequest()

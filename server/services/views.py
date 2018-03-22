@@ -27,13 +27,14 @@ CHROMOSOME_FAMILY_COUNTS = None
 CHROMOSOME_MAP = None
 CHROMOSOMES_AS_FAMILIES = None
 CHROMOSOMES_AS_GENES = None
+CACHE_READY = False
 
 
 # listen for ready signal from the database
 @receiver(connection_created)
 def db_ready_handler(sender, **kwargs):
     global CHROMOSOME_FAMILY_COUNTS, CHROMOSOME_MAP, CHROMOSOMES_AS_FAMILIES,\
-        CHROMOSOMES_AS_GENES
+        CHROMOSOMES_AS_GENES, CACHE_READY
     print 'Pre-loading macro-synteny data...'
 
     # get family assignment and number on chromosome for each gene
@@ -60,6 +61,8 @@ def db_ready_handler(sender, **kwargs):
             CHROMOSOMES_AS_FAMILIES[o.chromosome_id].append(f)
             CHROMOSOME_FAMILY_COUNTS[o.chromosome_id][f] += 1
 
+    print 'Loaded macro-synteny data...'
+    CACHE_READY = True
     # only want to run on the initial database connection
     connection_created.disconnect(db_ready_handler)
 
@@ -1047,7 +1050,7 @@ import time
 @ensure_nocache
 def v1_1_macro_synteny(request):
     global CHROMOSOME_FAMILY_COUNTS, CHROMOSOME_MAP, CHROMOSOMES_AS_FAMILIES,\
-        CHROMOSOMES_AS_GENES
+        CHROMOSOMES_AS_GENES, CACHE_READY
     # parse the POST data (Angular puts it in the request body)
     POST = json.loads(request.body)
     # make sure the request type is POST and that it contains a query (families)
@@ -1093,6 +1096,10 @@ def v1_1_macro_synteny(request):
           block = ((begin, begin), (end, end))
           trivial_blocks.add(block)
 
+	from time import sleep
+        while not CACHE_READY :
+          print "waiting for CACHE"
+          sleep(1)
         t1 = time.time()
         total = t1-t0
         print "filtering: " + str(total)

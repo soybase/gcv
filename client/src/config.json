@@ -128,35 +128,151 @@
     },
     "microMulti": {
       "type": "POST",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/micro-synteny-basic/"
+      "url": "/cadl_context_server/services/v1/micro-synteny-basic/"
     },
     "microSearch": {
       "type": "POST",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/micro-synteny-search/"
+      "url": "/cadl_context_server/services/v1/micro-synteny-search/"
     },
     "microQuery": {
       "type": "POST",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/gene-to-query-track/"
+      "url": "/cadl_context_server/services/v1/gene-to-query-track/"
     },
     "macro": {
       "type": "POST",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1_1/macro-synteny/"
+      "url": "/cadl_context_server/services/v1_1/macro-synteny/"
     },
     "geneLinks": {
       "type": "GET",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/gene-links/"
+      "url": "/cadl_context_server/services/v1/gene-links/"
     },
     "plotGlobal": {
       "type": "POST",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/global-plots/"
+      "url": "/cadl_context_server/services/v1/global-plots/"
     },
     "nearestGene": {
       "type": "POST",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1/nearest-gene/"
+      "url": "/cadl_context_server/services/v1/nearest-gene/"
     },
     "chromosome": {
       "type": "POST",
-      "url": "https://laasi.ncgr.org/cadl/gcs/services/v1_1/chromosome/"
+      "url": "/cadl_context_server/services/v1_1/chromosome/"
+    }
+  },
+  {
+    "id": "phavu",
+    "name": "Phaseolus vulgaris special",
+    "macroColors": {
+      "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+      "functionName": "taxonChroma.get"
+    },
+    "microMulti": {
+      "type": "POST",
+      "url": "/phavu_context_server/services/v1/micro-synteny-basic/"
+    },
+    "microSearch": {
+      "type": "POST",
+      "url": "/phavu_context_server/services/v1/micro-synteny-search/"
+    },
+    "microQuery": {
+      "type": "POST",
+      "url": "/phavu_context_server/services/v1/gene-to-query-track/"
+    },
+    "macro": {
+      "type": "POST",
+      "url": "/phavu_context_server/services/v1_1/macro-synteny/"
+    },
+    "geneLinks": {
+      "type": "GET",
+      "url": "https://legumeinfo.org/gene_links/"
+    },
+    "plotGlobal": {
+      "type": "POST",
+      "url": "/phavu_context_server/services/v1/global-plots/"
+    },
+    "nearestGene": {
+      "type": "POST",
+      "url": "/phavu_context_server/services/v1/nearest-gene/"
+    },
+    "chromosome": {
+      "type": "POST",
+      "url": "/phavu_context_server/services/v1_1/chromosome/"
+    }
+  },
+  {
+    "id": "glyma",
+    "name": "Glycine max gnm1.ann1",
+    "macroColors": {
+      "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+      "functionName": "taxonChroma.get"
+    },
+    "microMulti": {
+      "type": "POST",
+      "url": "/glyma_context_server/services/v1/micro-synteny-basic/"
+    },
+    "microSearch": {
+      "type": "POST",
+      "url": "/glyma_context_server/services/v1/micro-synteny-search/"
+    },
+    "microQuery": {
+      "type": "POST",
+      "url": "/glyma_context_server/services/v1/gene-to-query-track/"
+    },
+    "macro": {
+      "type": "POST",
+      "url": "/glyma_context_server/services/v1_1/macro-synteny/"
+    },
+    "plotGlobal": {
+      "type": "POST",
+      "url": "/glyma_context_server/services/v1/global-plots/"
+    },
+    "nearestGene": {
+      "type": "POST",
+      "url": "/glyma_context_server/services/v1/nearest-gene/"
+    },
+    "chromosome": {
+      "type": "POST",
+      "url": "/glyma_context_server/services/v1_1/chromosome/"
+    }
+  },
+  {
+    "id": "mt_hapmap",
+    "name": "Medicago truncatula HapMap",
+    "macroColors": {
+      "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+      "functionName": "taxonChroma.get"
+    },
+    "microMulti": {
+      "type": "POST",
+      "url": "/mthapmap_context_server/services/v1/micro-synteny-basic/"
+    },
+    "microSearch": {
+      "type": "POST",
+      "url": "/mthapmap_context_server/services/v1/micro-synteny-search/"
+    },
+    "microQuery": {
+      "type": "POST",
+      "url": "/mthapmap_context_server/services/v1/gene-to-query-track/"
+    },
+    "macro": {
+      "type": "POST",
+      "url": "/mthapmap_context_server/services/v1_1/macro-synteny/"
+    },
+    "geneLinks": {
+      "type": "GET",
+      "url": "https://legumeinfo.org/gene_links/"
+    },
+    "plotGlobal": {
+      "type": "POST",
+      "url": "/mthapmap_context_server/services/v1/global-plots/"
+    },
+    "nearestGene": {
+      "type": "POST",
+      "url": "/mthapmap_context_server/services/v1/nearest-gene/"
+    },
+    "chromosome": {
+      "type": "POST",
+      "url": "/mthapmap_context_server/services/v1_1/chromosome/"
     }
   }
 ]}

@@ -230,7 +230,7 @@ export class Plot extends Visualizer {
   	  .style('fill', (g) => {
   	  	if (g.family == '' ||
         (this.options.selectiveColoring !== undefined &&
-        this.options.selectiveColoring()[g.family] == 1)) {
+        this.options.selectiveColoring[g.family] == 1)) {
   	  	  return '#ffffff';
   	  	} return this.colors(g.family);
   	  });

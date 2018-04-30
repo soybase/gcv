@@ -75,6 +75,9 @@ export class MultiMacro {
       for (let j = 0; j < macroTracks.tracks.length; j++) {
         const macroTrack = macroTracks.tracks[j];
         const source_id = macroTrack.chromosome;
+        if (!this.data.blockSources.hasOwnProperty(source_id)) {
+          continue;
+        }
         this.data.blockSources[target_id].add(source_id);
         this.data.blockSources[source_id].add(target_id);
         for (let k = 0; k < macroTrack.blocks.length; k++) {
@@ -232,14 +235,14 @@ export class MultiMacro {
 
   private layoutMouseover(d, i) {
     const chromosome = ".GCV [data-chromosome~='" + d.id + "']";
-    const genusSpecies = ".GCV [data-genus-species='" + this.data.genusSpecies[d.id] + "']";
+    const genusSpecies = ".GCV .legend[data-genus-species='" + this.data.genusSpecies[d.id] + "']";
     const selection = d3.selectAll(chromosome + ", " + genusSpecies);
     this.beginHover(selection);
   }
 
   private layoutMouseout(d, i) {
     const chromosome = ".GCV [data-chromosome~='" + d.id + "']";
-    const genusSpecies = ".GCV [data-genus-species='" + this.data.genusSpecies[d.id] + "']";
+    const genusSpecies = ".GCV .legend[data-genus-species='" + this.data.genusSpecies[d.id] + "']";
     const selection = d3.selectAll(chromosome + ", " + genusSpecies);
     this.endHover(selection);
   }

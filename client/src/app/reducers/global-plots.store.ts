@@ -107,7 +107,7 @@ export const getSelectedPlot = createSelector(
     if (id in entities) {
       return entities[id];
     }
-    return undefined;
+    return null;
   },
 );
 

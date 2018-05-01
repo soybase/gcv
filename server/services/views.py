@@ -14,7 +14,6 @@ from services.models import Cv, Cvterm, Feature, Featureloc, Featureprop, \
 
 # Python
 import json
-import math
 import operator
 import time
 from collections     import defaultdict, OrderedDict
@@ -981,7 +980,7 @@ def macro_synteny_traceback(path_ends, pointers, scores, minsize):
       begin = end
       while begin in pointers:
         begin = pointers.pop(begin)
-      length = scores[end] - scores[begin]
+      length = scores[end] - scores[begin] + 1
       if length >= minsize:
         yield (begin, end)
 
@@ -1009,12 +1008,9 @@ minsize, familymask, chromosome_as_genes, family_counts))):
   for i in range(len(pairs)):
     n1, n2 = p1 = pairs[i]
     f_scores[p1] = r_scores[p1] = 1
-    dist = float('inf')
     # iterate preceding nodes in DAG from closest to furtherest
     for j in reversed(range(i)):
       m1, m2 = p2 = pairs[j]
-      if n1 == m1:
-        continue
       # the query and chromosome must agree on the ordering
       # n1 <= m1 is always true
       d1 = n1 - m1
@@ -1024,22 +1020,18 @@ minsize, familymask, chromosome_as_genes, family_counts))):
         # are the nodes close enough to be in the same path?
         if d1 <= maxinsert and d2 <= maxinsert:
           s = f_scores[p2] + 1
-          d = math.sqrt(math.pow(d1, 2) + math.pow(d2, 2))
-          if s > f_scores[p1] or (s == f_scores[p1] and d < dist):
+          if s > f_scores[p1] or (s == f_scores[p1] and p2[0] == p2[1]):  # in case trivial block ends on gene family with multiple successive copies
             f_scores[p1]   = s
             f_pointers[p1] = p2
-            dist           = d
       # reverse blocks
-      if m2 > n2:
+      elif m2 > n2:
         d2 = m2 - n2
         # are the nodes close enough to be in the same path?
         if d1 <= maxinsert and d2 <= maxinsert:
           s = r_scores[p2] + 1
-          d = math.sqrt(math.pow(d1, 2) + math.pow(d2, 2))
-          if s > r_scores[p1] or (s == f_scores[p1] and d < dist):
+          if s > r_scores[p1]:
             r_scores[p1]   = s
             r_pointers[p1] = p2
-            dist           = d
       # if this node is too far away then all remaining nodes are too
       if d1 > maxinsert:
         break
@@ -1110,14 +1102,17 @@ def v1_1_macro_synteny(request):
         trivial_blocks = set()
         begin, _ = self_matches.popitem(last=False)
         end = begin
+        length = 1
         for i in self_matches:
           if i - end > maxinsert:
-            if end - begin >= minsize:
+            if length >= minsize:
               block = ((begin, begin), (end, end))
               trivial_blocks.add(block)
             begin = i
+            length = 0
           end = i
-        if end - begin >= minsize:
+          length += 1
+        if length >= minsize:
           block = ((begin, begin), (end, end))
           trivial_blocks.add(block)
 

@@ -1,5 +1,5 @@
-export const GET  = 'GET';
-export const POST = 'POST';
+export const GET = "GET";
+export const POST = "POST";
 
 export class Request {
   type: string;  // GET or POST
@@ -9,11 +9,12 @@ export class Request {
 export class Server {
   id: string;  // unique & url friendly
   name: string;
-  microBasic: Request;
+  microMulti: Request;
   microSearch: Request;
   microQuery: Request;
   macro: Request;
   geneLinks: Request;
   plotGlobal: Request;
   nearestGene: Request;
+  chromosome: Request;
 }

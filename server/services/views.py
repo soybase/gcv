@@ -1,19 +1,66 @@
-# import http stuffs
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseBadRequest, Http404
-import json
-# import our models and helpers
-from services.models import Organism, Cvterm, Cv, Feature, Featureloc, Phylonode,\
-FeatureRelationship, GeneOrder, Featureprop, GeneFamilyAssignment
-# search stuffs
-from django.db.models import Q, Func, F
-# context view
-import operator
-# so anyone can use the services
+# Django
+from django.db.backends.signals   import connection_created
+from django.db.models             import F, Func, Q
+from django.dispatch              import receiver
+from django.http                  import Http404, HttpResponse, \
+    HttpResponseBadRequest
+from django.shortcuts             import get_object_or_404, render
+from django.utils.http            import http_date
 from django.views.decorators.csrf import csrf_exempt
-# time stuff for caching
-from django.utils.http import http_date
+
+# services app
+from services.models import Cv, Cvterm, Feature, Featureloc, Featureprop, \
+    FeatureRelationship, GeneFamilyAssignment, GeneOrder, Organism, Phylonode
+
+# Python
+import json
+import operator
 import time
+from collections     import defaultdict, OrderedDict
+from itertools       import chain
+from multiprocessing import Pool as ThreadPool
+
+
+# globals that store pre-loaded data
+CHROMOSOME_FAMILY_COUNTS = None
+CHROMOSOME_MAP = None
+CHROMOSOMES_AS_FAMILIES = None
+CHROMOSOMES_AS_GENES = None
+
+
+# listen for ready signal from the database
+@receiver(connection_created)
+def db_ready_handler(sender, **kwargs):
+    global CHROMOSOME_FAMILY_COUNTS, CHROMOSOME_MAP, CHROMOSOMES_AS_FAMILIES,\
+        CHROMOSOMES_AS_GENES
+    print 'Pre-loading macro-synteny data...'
+
+    # get family assignment and number on chromosome for each gene
+    families        = GeneFamilyAssignment.objects.all().iterator()
+    gene_family_map = dict((f.gene_id, f.family_label) for f in families)
+    gene_orders     = list(GeneOrder.objects.all()\
+                        .order_by('chromosome_id', 'number'))
+
+    # fetch all chromosomes
+    chromosome_cvs = list(Cvterm.objects.filter(name='chromosome'))
+    chromosomes = list(Feature.objects
+        .only('feature_id', 'name', 'organism_id')
+        .filter(type__in=chromosome_cvs))
+    CHROMOSOME_MAP = dict((c.feature_id, c) for c in chromosomes)
+
+    # construct various representations of chromosomes
+    CHROMOSOMES_AS_GENES    = defaultdict(list)
+    CHROMOSOMES_AS_FAMILIES = defaultdict(list)
+    CHROMOSOME_FAMILY_COUNTS = defaultdict(lambda: defaultdict(int))
+    for o in gene_orders:
+        if o.chromosome_id in CHROMOSOME_MAP:
+            CHROMOSOMES_AS_GENES[o.chromosome_id].append(o.gene_id)
+            f = gene_family_map.get(o.gene_id, '')
+            CHROMOSOMES_AS_FAMILIES[o.chromosome_id].append(f)
+            CHROMOSOME_FAMILY_COUNTS[o.chromosome_id][f] += 1
+
+    # only want to run on the initial database connection
+    connection_created.disconnect(db_ready_handler)
 
 
 # decorator for invalidating the cache every hour
@@ -59,7 +106,7 @@ def v1_micro_synteny_basic(request):
             if num <= 0:
                 raise ValueError("neighbors can't be negative")
         except:
-            return HttpResponseBadRequest
+            return HttpResponseBadRequest()
         # get the focus genes
         focus_genes = Feature.objects.only('organism_id', 'name')\
         .filter(name__in=POST['genes'])
@@ -200,17 +247,14 @@ def v1_micro_synteny_basic(request):
             focus_loc = focus_loc_map[gene.pk]
             srcfeature = srcfeature_map[focus_loc.srcfeature_id]
             organism = organism_map[gene.organism_id]
-            family_id = family_map[gene.pk]
+            family_id = "" if gene.pk not in family_map else family_map[gene.pk]
             if len(family_id) > 0:
                 focus_family_id = family_id
                 if family_id not in families:
-                    families[family_id] = ('{"name":"' + family_id +
-                        '", "id":"' + family_id + '"}')
-            group = ('{"chromosome_name":"' + srcfeature.name +
-                '", "chromosome_id":' + str(srcfeature.feature_id) +
-                ', "genus":"' + organism.genus +
-                '", "species":"' + organism.species +
-                '", "species_id":' + str(gene.organism_id)+', "genes":[')
+                  families[family_id] = {
+                    "name": family_id,
+                    "id": family_id
+                  }
             order = order_map[gene.pk]
             track_genes = track_gene_map[order.pk]
             track_locs = track_loc_map[order.pk]
@@ -222,26 +266,39 @@ def v1_micro_synteny_basic(request):
                                else gene_family_map[l.feature_id]
                 if family_id != '':
                     if family_id not in families:
-                            families[family_id] = ('{"name":"' + family_id +
-                                '", "id":"' + family_id + '"}')
-                genes.append('{"name":"' + feature_name_map[l.feature_id] +
-                             '", "id":' + str(l.feature_id) + ',' +
-                             '"fmin":' + str(l.fmin) + ',' +
-                             '"fmax":' + str(l.fmax) + ',' +
-                             '"strand":' + str(l.strand) + ',' +
-                             '"family":"' + family_id + '"}')
-            group += ','.join(genes) + ']}'
+                      families[family_id] = {
+                        "name": family_id,
+                        "id": family_id
+                      }
+                genes.append({
+                  "name": feature_name_map[l.feature_id],
+                  "id": l.feature_id,
+                  "fmin": l.fmin,
+                  "fmax": l.fmax,
+                  "strand": l.strand,
+                  "family": family_id
+                })
+            group = {
+              "chromosome_name": srcfeature.name,
+              "chromosome_id": srcfeature.feature_id,
+              "genus": organism.genus,
+              "species": organism.species,
+              "species_id": gene.organism_id,
+              "genes": genes
+            }
             groups.append(group)
 
         # write the contents of the file
-        view_json = ('{"families":[' + ','.join(families.values()) + '], "groups":[' +
-            ','.join(groups) + ']}')
+        view_json = {
+          "families": families.values(),
+          "groups": groups
+        }
 
         return HttpResponse(
             json.dumps(view_json),
             content_type='application/json; charset=utf8'
         )
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # resolves a focus gene name to a query track
@@ -267,7 +324,7 @@ def v1_gene_to_query_track(request):
             if num <= 0:
                 raise ValueError("neighbors can't be negative")
         except:
-            return HttpResponseBadRequest
+            return HttpResponseBadRequest()
         # get the gene family type
         gene_family_type = list(
             Cvterm.objects.only('pk').filter(name='gene family')
@@ -330,21 +387,31 @@ def v1_gene_to_query_track(request):
             g = neighbor_ids[i]
             family = str(neighbor_family_map[g] ) if g in neighbor_family_map else ''
             floc = neighbor_floc_map[g]
-            genes.append('{"name":"' + neighbor_name_map[g] + '", "id":' +
-                str(g) + ', "family":"' + family + '", "fmin":' +
-                str(floc.fmin) + ', "fmax":' + str(floc.fmax) + ', "strand":' +
-                str(floc.strand) + ', "x":' + str(i) + ', "y":0}')
+            genes.append({
+              "name": neighbor_name_map[g],
+              "id": g,
+              "family": family,
+              "fmin": floc.fmin,
+              "fmax": floc.fmax,
+              "strand": floc.strand,
+              "x": i,
+              "y": 0
+            })
             query_align.append((g, family))
-        query_group = ('{"species_name":"' + organism.genus[0] + '.' +
-            organism.species + '", "species_id":' + str(organism.pk) +
-            ', "chromosome_name":"' + chromosome.name + '", "chromosome_id":' +
-            str(chromosome.pk) + ', "genes":[' + ','.join(genes) + ']}')
+        query_group = {
+          "genus": organism.genus,
+          "species": organism.species,
+          "species_id": organism.pk,
+          "chromosome_name": chromosome.name,
+          "chromosome_id": chromosome.pk,
+          "genes": genes
+        }
 
         return HttpResponse(
             json.dumps(query_group),
             content_type='application/json; charset=utf8'
         )
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # returns similar contexts to the families provided
@@ -368,16 +435,16 @@ def v1_micro_synteny_search(request):
             if num_matched_families <= 0:
                 raise ValueError("matched can't be negative")
         except:
-            return HttpResponseBadRequest
+            return HttpResponseBadRequest()
         # the number of non query family genes tolerated between each pair of
         # family genes
         non_family = POST['intermediate']
         try:
             non_family = int(non_family)
-            if non_family <= 0:
+            if non_family < 0:
                 raise ValueError("intermediate can't be negative")
         except:
-            return HttpResponseBadRequest
+            return HttpResponseBadRequest()
         # the number of non query family genes tolerated between each pair of
         # get the gene family type
         gene_family_type = list(
@@ -521,19 +588,23 @@ def v1_micro_synteny_search(request):
             gene_json = []
             for g in tracks[key]:
                 family = track_family_map[g] if g in track_family_map else ''
-                gene_json.append('{"name":"' + gene_name_map[g] + '", "id":' +
-                    str(g) + ', "family":"' +family + '", "fmin":' +
-                    str(gene_loc_map[g].fmin) + ', "fmax":' +
-                    str(gene_loc_map[g].fmax) + ', "strand":' +
-                    str(gene_loc_map[g].strand)+'}')
+                gene_json.append({
+                  "name": gene_name_map[g],
+                  "id": g,
+                  "family": family,
+                  "fmin": gene_loc_map[g].fmin,
+                  "fmax": gene_loc_map[g].fmax,
+                  "strand": gene_loc_map[g].strand
+                })
             o = id_organism_map[id_chromosome_map[chromosome_id].organism_id]
-            group = ('{"genus":"' + o.genus +
-                '", "species":"' + o.species +
-                '", "species_id":' +
-                str(id_chromosome_map[chromosome_id].organism_id) +
-                ', "chromosome_name":"' + id_chromosome_map[chromosome_id].name +
-                '", "chromosome_id":' + str(chromosome_id) + ', "genes":[' +
-                ','.join(gene_json)+']}')
+            group = {
+              "genus": o.genus,
+              "species": o.species,
+              "species_id": id_chromosome_map[chromosome_id].organism_id,
+              "chromosome_name": id_chromosome_map[chromosome_id].name,
+              "chromosome_id": chromosome_id,
+              "genes": gene_json
+            }
             groups.append(group)
             # prepare for the next track
             y += 1
@@ -545,17 +616,20 @@ def v1_micro_synteny_search(request):
         # make the family json
         family_json = []
         for f in family_ids :
-            family_json.append('{"name":"'+f+'", "id":"'+f+'"}')
-        view_json = '{"families":['+','.join(family_json)+'], "groups":['
-
-        # make the final json
-        view_json += ','.join(groups)+']}'
+            family_json.append({
+              "name": f,
+              "id": f
+            })
+        view_json = {
+          "families": family_json,
+          "groups": groups
+        }
 
         return HttpResponse(
             json.dumps(view_json),
             content_type='application/json; charset=utf8'
         )
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # returns all the GENES for the given chromosome that have the same family as
@@ -575,9 +649,9 @@ def v1_global_plot(request):
             raise Http404
         gene_family_type = gene_family_type[0]
 
-        # find all genes with the same families
+        chromosome = get_object_or_404(Feature, name=POST['chromosome'])
         chromosome_gene_orders = GeneOrder.objects.filter(
-            chromosome=POST["chromosome"]
+            chromosome=chromosome
         )
         chromosome_gene_ids = chromosome_gene_orders.values_list(
             "gene", flat=True
@@ -620,7 +694,7 @@ def v1_global_plot(request):
             json.dumps(gene_json),
             content_type='application/json; charset=utf8'
         )
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # returns chromosome scale synteny blocks for the chromosome of the given gene
@@ -696,7 +770,7 @@ def v1_macro_synteny(request):
             json.dumps(synteny_json),
             content_type='application/json; charset=utf8'
         )
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # returns the gene on the given chromosome that is closest to the given position
@@ -714,7 +788,7 @@ def v1_nearest_gene(request):
             if pos < 0:
                 raise ValueError("matched can't be negative")
         except:
-            return HttpResponseBadRequest
+            return HttpResponseBadRequest()
         # get the gene type
         sequence_cv = Cv.objects.only('pk').filter(name='sequence')
         gene_type = list(
@@ -755,7 +829,7 @@ def v1_nearest_gene(request):
             json.dumps(data),
             content_type='application/json; charset=utf8'
         )
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 ###############
 # depreciated #
@@ -774,7 +848,7 @@ def micro_synteny_basic(request):
         del POST['numNeighbors']
         request._body = json.dumps(POST)
         return v1_micro_synteny_basic(request)
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # resolves a focus gene name to a query track
@@ -790,7 +864,7 @@ def gene_to_query(request):
         del POST['numNeighbors']
         request._body = json.dumps(POST)
         return v1_gene_to_query_track(request)
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # returns similar contexts to the families provided
@@ -808,7 +882,7 @@ def micro_synteny_search(request):
         del POST['numNonFamily']
         request._body = json.dumps(POST)
         return v1_micro_synteny_search(request)
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
 
 
 # returns all the GENES for the given chromosome that have the same family as
@@ -825,4 +899,315 @@ def global_plots(request):
         del POST['chromosomeID']
         request._body = json.dumps(POST)
         return v1_global_plot(request)
-    return HttpResponseBadRequest
+    return HttpResponseBadRequest()
+
+
+########
+# v1.1 #
+########
+
+
+# returns the requested chromosome (ordered list of gene families)
+@csrf_exempt
+@ensure_nocache
+def v1_1_chromosome(request):
+    # parse the POST data (Angular puts it in the request body)
+    POST = json.loads(request.body)
+    # make sure the request type is POST and that it contains a query (families)
+    if request.method == 'POST' and 'chromosome' in POST:
+        # get the query chromosome
+        chromosome = get_object_or_404(Feature, name=POST['chromosome'])
+
+        # get all the genes on the query chromosomes
+        genes = list(GeneOrder.objects.only(
+            'gene_id',
+            'number',
+            'chromosome_id'
+        ).filter(chromosome=chromosome)
+         .order_by('number')
+         .values_list('gene_id', flat=True))
+
+        gene_names = list(Feature.objects.only('name').filter(
+          feature_id__in=genes))
+        gene_name_map = dict((g.pk, g.name) for g in gene_names)
+
+        # get the genomic locations of the genes
+        flocs = list(Featureloc.objects.only(
+            'feature_id',
+            'fmin',
+            'fmax',
+            'strand'
+        ).filter(feature__in=genes))
+        gene_loc_map = dict((f.feature_id, {'fmin': f.fmin, 'fmax': f.fmax})
+            for f in flocs)
+
+        # get all the families on the query chromosome
+        gene_families = list(GeneFamilyAssignment.objects.only(
+            'gene_id',
+            'family_label'
+        ).filter(gene__in=genes))
+        gene_family_map = dict((o.gene_id, o.family_label) for o in gene_families)
+
+        # create an ordered list of gene families
+        ordered_names    = []
+        ordered_locs     = []
+        ordered_families = []
+        for g_id in genes:
+            ordered_names.append(gene_name_map[g_id])
+            ordered_locs.append(gene_loc_map[g_id])
+            ordered_families.append(gene_family_map.get(g_id, ''))
+
+        # return the chromosome as encoded as json
+        output_json = {
+            'genes':     ordered_names,
+            'locations': ordered_locs,
+            'families':  ordered_families,
+            'length':    chromosome.seqlen
+        }
+        return HttpResponse(
+            json.dumps(output_json),
+            content_type='application/json; charset=utf8'
+        )
+    return HttpResponseBadRequest()
+
+
+def macro_synteny_traceback(path_ends, pointers, scores, minsize):
+  path_ends.sort(reverse=True)
+  for _, end in path_ends:
+    if end in pointers:  # note: singletons aren't in pointers
+      if scores[end] < minsize:
+        break
+      begin = end
+      while begin in pointers:
+        begin = pointers.pop(begin)
+      length = scores[end] - scores[begin] + 1
+      if length >= minsize:
+        yield (begin, end)
+
+
+def macro_synteny_paths(((c_id, chromosome), (family_num_map, trivial_blocks, maxinsert,
+minsize, familymask, chromosome_as_genes, family_counts))):
+  # generate number pairs ORDERED BY CHROMOSOME GENE NUMBER THEN QUERY
+  # GENE NUMBER - this is a topological sorting
+  pairs = []
+  for i in range(len(chromosome)):
+    f = chromosome[i]
+    if f in family_num_map and family_counts[f] <= familymask:
+      nums = family_num_map[f]
+      pairs.extend(map(lambda n: (i, n), nums))
+
+  # "construct" a DAG and compute longest paths using a recurrence
+  # relation similar to that of DAGchainer
+  f_path_ends = []  # orders path end nodes longest to shortest
+  f_pointers  = {}  # points to the previous node (pair) in a path
+  f_scores    = {}  # the length of the longest path ending at each node
+  r_path_ends = []
+  r_pointers  = {}
+  r_scores    = {}
+  # iterate nodes, which are in DAG order
+  for i in range(len(pairs)):
+    n1, n2 = p1 = pairs[i]
+    f_scores[p1] = r_scores[p1] = 1
+    # iterate preceding nodes in DAG from closest to furtherest
+    for j in reversed(range(i)):
+      m1, m2 = p2 = pairs[j]
+      # the query and chromosome must agree on the ordering
+      # n1 <= m1 is always true
+      d1 = n1 - m1
+      # forward blocks
+      if m2 < n2:
+        d2 = n2 - m2
+        # are the nodes close enough to be in the same path?
+        if d1 <= maxinsert and d2 <= maxinsert:
+          s = f_scores[p2] + 1
+          if s > f_scores[p1] or (s == f_scores[p1] and p2[0] == p2[1]):  # in case trivial block ends on gene family with multiple successive copies
+            f_scores[p1]   = s
+            f_pointers[p1] = p2
+      # reverse blocks
+      elif m2 > n2:
+        d2 = m2 - n2
+        # are the nodes close enough to be in the same path?
+        if d1 <= maxinsert and d2 <= maxinsert:
+          s = r_scores[p2] + 1
+          if s > r_scores[p1]:
+            r_scores[p1]   = s
+            r_pointers[p1] = p2
+      # if this node is too far away then all remaining nodes are too
+      if d1 > maxinsert:
+        break
+    f_path_ends.append((f_scores[p1], p1))
+    r_path_ends.append((r_scores[p1], p1))
+  # traceback longest paths and get endpoints
+  f = macro_synteny_traceback(f_path_ends, f_pointers, f_scores, minsize)
+  r = macro_synteny_traceback(r_path_ends, r_pointers, r_scores, minsize)
+  paths     = []
+  end_genes = []
+  trivial_catcher = []
+  for block in chain(f, r):
+    if block in trivial_blocks:
+      trivial_catcher.append(block)
+    else:
+      begin, end = block
+      paths.append((begin, end))
+      end_genes.append(chromosome_as_genes[begin[0]])
+      end_genes.append(chromosome_as_genes[end[0]])
+  if len(trivial_catcher) != len(trivial_blocks):
+    for begin, end in trivial_catcher:
+      paths.append((begin, end))
+      end_genes.append(chromosome_as_genes[begin[0]])
+      end_genes.append(chromosome_as_genes[end[0]])
+  return (c_id, paths, end_genes)
+
+
+# computes chromosome scale synteny blocks for the given chromosome (ordered
+# list of gene families)
+import time
+@csrf_exempt
+@ensure_nocache
+def v1_1_macro_synteny(request):
+    global CHROMOSOME_FAMILY_COUNTS, CHROMOSOME_MAP, CHROMOSOMES_AS_FAMILIES,\
+        CHROMOSOMES_AS_GENES
+    # parse the POST data (Angular puts it in the request body)
+    POST = json.loads(request.body)
+    # make sure the request type is POST and that it contains a query (families)
+    if request.method == 'POST' and 'families' in POST and 'matched' in POST and\
+    'intermediate' in POST and 'mask' in POST:
+        pool = ThreadPool(4)
+
+        T0 = t0 = time.time()
+        # parse the parameters
+        query = POST['families']
+        maxinsert = POST['intermediate'] + 1
+        minsize   = POST['matched'] + 1
+        familymask = POST['mask']
+        targets = POST.get('targets', [])
+
+        # make a dictionary that maps families to query gene numbers
+        family_num_map = defaultdict(list)
+        self_matches = OrderedDict()
+        mask = set()
+        for i in range(len(query)):
+          f = query[i]
+          if f != '':
+            self_matches[i] = None
+            family_num_map[f].append(i)
+            if len(family_num_map[f]) > familymask:
+                mask.add(f)
+        # remove families that have too many members
+        for f in mask:
+          for i in family_num_map[f]:
+            del self_matches[i]
+          del family_num_map[f]
+        # compute all trivial self comparison blocks
+        trivial_blocks = set()
+        begin, _ = self_matches.popitem(last=False)
+        end = begin
+        length = 1
+        for i in self_matches:
+          if i - end > maxinsert:
+            if length >= minsize:
+              block = ((begin, begin), (end, end))
+              trivial_blocks.add(block)
+            begin = i
+            length = 0
+          end = i
+          length += 1
+        if length >= minsize:
+          block = ((begin, begin), (end, end))
+          trivial_blocks.add(block)
+
+        t1 = time.time()
+        total = t1-t0
+        print "filtering: " + str(total)
+        T1 = t0 = t1
+
+        # mine synteny from each chromosome
+        args = []
+        target_chromosomes = []
+        for c_id in CHROMOSOMES_AS_FAMILIES:
+          if targets and CHROMOSOME_MAP[c_id].name not in targets:
+            continue
+          target_chromosomes.append((c_id, CHROMOSOMES_AS_FAMILIES[c_id]))
+          genes = CHROMOSOMES_AS_GENES[c_id]
+          counts = CHROMOSOME_FAMILY_COUNTS[c_id]
+          c_args = (family_num_map, trivial_blocks, maxinsert, minsize, familymask, genes, counts)
+          args.append(c_args)
+        data = zip(target_chromosomes, args)
+        results = pool.map(macro_synteny_paths, data)
+        paths     = {}
+        end_genes = []
+        for c_id, c_paths, c_end_genes in results:
+            if c_paths:
+                paths[c_id] = c_paths
+                end_genes.extend(c_end_genes)
+
+        t1 = time.time()
+        total = t1-T1
+        print "algorithm: " + str(total)
+        t0 = t1
+
+        # get the genomic locations of the genes that each path begin/ends at
+        flocs = list(Featureloc.objects.only(
+            'feature_id',
+            'fmin',
+            'fmax',
+            'strand'
+        ).filter(feature__in=end_genes))
+        gene_loc_map = dict((f.feature_id, {'fmin': f.fmin, 'fmax': f.fmax})
+            for f in flocs)
+
+        # get the organism of each chromosome that has blocks
+        organism_ids = map(lambda c: CHROMOSOME_MAP[c].organism_id, paths.keys())
+        organisms = list(Organism.objects.only('genus', 'species')
+            .filter(pk__in=organism_ids))
+        organism_map = dict((o.pk, o) for o in organisms)
+
+        t1 = time.time()
+        total = t1-t0
+        print "organsisms: " + str(total)
+        t0 = t1
+
+        # generate the JSON
+        tracks = []
+        for c_id, c_paths in paths.iteritems():
+            blocks = []
+            for begin, end in c_paths:
+                begin_gene = CHROMOSOMES_AS_GENES[c_id][begin[0]]
+                end_gene   = CHROMOSOMES_AS_GENES[c_id][end[0]]
+                begin_loc  = gene_loc_map[begin_gene]
+                end_loc    = gene_loc_map[end_gene]
+                start      = min(begin_loc['fmin'], begin_loc['fmax'])
+                stop       = max(end_loc['fmin'], end_loc['fmax'])
+                query_start, query_stop, orientation = (begin[1], end[1], '+') \
+                    if begin[1] < end[1] else (end[1], begin[1], '-')
+                blocks.append({
+                    'query_start': query_start,
+                    'query_stop':  query_stop,
+                    'start':       start,
+                    'stop':        stop,
+                    'orientation': orientation
+                })
+            c = CHROMOSOME_MAP[c_id]
+            organism = organism_map[c.organism_id]
+            tracks.append({
+                'chromosome': c.name,
+                'species':    organism.species,
+                'genus':      organism.genus,
+                'blocks':     blocks
+            })
+
+        t1 = time.time()
+        total = t1-t0
+        print "json: " + str(total)
+
+        total = t1-T0
+        print "total: " + str(total)
+
+        pool.close()
+
+        # create and return JSON
+        return HttpResponse(
+            json.dumps(tracks),
+            content_type='application/json; charset=utf8'
+        )
+    return HttpResponseBadRequest()

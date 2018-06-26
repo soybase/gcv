@@ -1,18 +1,17 @@
 // Angular
-import { Component,
-         Input, 
-         OnChanges,
-         SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from "@angular/core";
 
 // App
-import { Group }          from '../../models/group.model';
+import { Group } from "../../models/group.model";
 
 @Component({
   moduleId: module.id.toString(),
-  selector: 'track-detail',
+  selector: "track-detail",
+  styles: [ "" ],
   template: `
     <h4>{{track.genus[0]}}.{{track.species}} - {{track.chromosome_name}}</h4>
-    <p><a href="#/search/{{track.source}}/{{focus}}">Search for similar contexts</a></p>
+    <p><a [routerLink]="['/search', track.source, focus]" queryParamsHandling="merge">Search for similar contexts</a></p>
+    <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?subtab=upload&type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of track.genes">
@@ -25,18 +24,18 @@ import { Group }          from '../../models/group.model';
       </li>
     </ul>
   `,
-  styles: [ '' ]
 })
-
 export class TrackDetailComponent implements OnChanges {
   @Input() track: Group;
 
   focus: string;
+  geneListFormatted: string;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.track !== undefined) {
-      let idx = Math.floor(this.track.genes.length / 2);
+      const idx = Math.floor(this.track.genes.length / 2);
       this.focus = this.track.genes[idx].name;
+      this.geneListFormatted = this.track.genes.map(x => x.name).join('%0A');
     }
   }
 }

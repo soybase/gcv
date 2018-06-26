@@ -1,132 +1,110 @@
 // Angular
-import { BehaviorSubject }        from 'rxjs/BehaviorSubject';
-import { Component,
-         EventEmitter,
-         Input,
-         OnChanges,
-         OnDestroy,
-         OnInit,
-         Output,
-         SimpleChanges }          from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { Component, EventEmitter, OnInit, Output } from "@angular/core";
+import { FormBuilder, FormGroup } from "@angular/forms";
 
 // App services
-import { Alert }                 from '../../models/alert.model';
-import { Alerts }                from '../../constants/alerts';
-import { AlertsService }         from '../../services/alerts.service';
-import { ALIGNMENT_ALGORITHMS }  from '../../constants/alignment-algorithms';
-import { AlignmentParams }       from '../../models/alignment-params.model';
-import { AlignmentService }      from '../../services/alignment.service';
-import { AppConfig }             from '../../app.config';
-import { DefaultAlignmentParams,
-         DefaultQueryParams }    from '../../constants/default-parameters';
-import { MicroTracksService }    from '../../services/micro-tracks.service';
-import { QueryParams }           from '../../models/query-params.model';
-import { UrlQueryParamsService } from '../../services/url-query-params.service';
+import { AppConfig } from "../../app.config";
+import { ALIGNMENT_ALGORITHMS } from "../../constants/alignment-algorithms";
+import { AlignmentParams } from "../../models/alignment-params.model";
+import { BlockParams } from "../../models/block-params.model";
+import { QueryParams } from "../../models/query-params.model";
+import { AlignmentService } from "../../services/alignment.service";
+import { MacroTracksService } from "../../services/macro-tracks.service";
+import { MicroTracksService } from "../../services/micro-tracks.service";
 
 @Component({
   moduleId: module.id.toString(),
-  selector: 'search-params',
-  templateUrl: 'search-params.component.html',
-  styleUrls: [ 'search-params.component.css' ]
+  selector: "search-params",
+  styles: [ require("./search-params.component.scss") ],
+  template: require("./search-params.component.html"),
 })
+export class SearchParamsComponent implements OnInit {
 
-export class SearchParamsComponent implements OnChanges, OnDestroy, OnInit {
-  @Input() source: string;
-  @Input() gene: string;
+  // component IO
   @Output() invalid = new EventEmitter();
-  @Output() submitted = new EventEmitter();
+  @Output() valid   = new EventEmitter();
 
-  queryHelp = false;
+  // UI state
+  blockHelp     = false;
+  queryHelp     = false;
   alignmentHelp = false;
 
+  // form groups
+  blockGroup: FormGroup;
   queryGroup: FormGroup;
   alignmentGroup: FormGroup;
 
-  sources = AppConfig.SERVERS.filter(s => s.hasOwnProperty('microSearch'));
+  // form data
+  sources    = AppConfig.SERVERS.filter((s) => s.hasOwnProperty("microSearch"));
   algorithms = ALIGNMENT_ALGORITHMS;
 
-  private _sub: any;
+  // constructor
+  constructor(private alignmentService: AlignmentService,
+              private fb: FormBuilder,
+              private macroTracksService: MacroTracksService,
+              private microTracksService: MicroTracksService) { }
 
-  constructor(private _alerts: AlertsService,
-              private _alignmentService: AlignmentService,
-              private _fb: FormBuilder,
-              private _tracksService: MicroTracksService,
-              private _url: UrlQueryParamsService) { }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (this.queryGroup !== undefined)
-      this._geneSearch();
-  }
-
-  ngOnDestroy(): void {
-    this._sub.unsubscribe();
-  }
+  // Angular hooks
 
   ngOnInit(): void {
-    // initialize forms
-    let defaultQuery = new QueryParams(
-      DefaultQueryParams.DEFAULT_NEIGHBORS,
-      [DefaultQueryParams.DEFAULT_SOURCE] as string[],
-      DefaultQueryParams.DEFAULT_MATCHED,
-      DefaultQueryParams.DEFAULT_INTERMEDIATE);
-    this.queryGroup = this._fb.group(defaultQuery.formControls());
-    let defaultAlignment = new AlignmentParams(
-      DefaultAlignmentParams.DEFAULT_ALIGNMENT,
-      DefaultAlignmentParams.DEFAULT_MATCH,
-      DefaultAlignmentParams.DEFAULT_MISMATCH,
-      DefaultAlignmentParams.DEFAULT_GAP,
-      DefaultAlignmentParams.DEFAULT_SCORE,
-      DefaultAlignmentParams.DEFAULT_THRESHOLD);
-    this.alignmentGroup = this._fb.group(defaultAlignment.formControls());
-    // subscribe to url query param updates
-    this._sub = this._url.params.subscribe(params => {
-      let oldQuery = this.queryGroup.getRawValue();
-      this.queryGroup.patchValue(params);
-      let newQuery = this.queryGroup.getRawValue();
-      if (JSON.stringify(oldQuery) !== JSON.stringify(newQuery))
-        this.queryGroup.markAsDirty();
-      let oldAlignment = this.alignmentGroup.getRawValue();
-      this.alignmentGroup.patchValue(params);
-      let newAlignment = this.alignmentGroup.getRawValue();
-      if (JSON.stringify(oldAlignment) !== JSON.stringify(newAlignment))
-        this.alignmentGroup.markAsDirty();
-      if (this.queryGroup.dirty || this.alignmentGroup.dirty)
-        this.submit();
-    });
+    // initialize block group and subscribe to store updates
+    const defaultBlock = new BlockParams();
+    this.blockGroup  = this.fb.group(defaultBlock.formControls());
+    this.macroTracksService.blockParams
+      .subscribe((params) => this._updateGroup(this.blockGroup, params));
+
+    // initialize query group and subscribe to store updates
+    const defaultQuery = new QueryParams();
+    this.queryGroup  = this.fb.group(defaultQuery.formControls());
+    this.microTracksService.queryParams
+      .subscribe((params) => this._updateGroup(this.queryGroup, params));
+
+    // initialize alignment group and subscribe to store updates
+    const defaultAlignment = new AlignmentParams();
+    this.alignmentGroup  = this.fb.group(defaultAlignment.formControls());
+    this.alignmentService.alignmentParams
+      .subscribe((params) => this._updateGroup(this.alignmentGroup, params));
+
     // submit the updated form
+    this.blockGroup.markAsDirty();
     this.queryGroup.markAsDirty();
     this.alignmentGroup.markAsDirty();
     this.submit();
   }
 
-  private _geneSearch(): void {
-    this._tracksService.geneSearch(
-      this.source,
-      this.gene,
-      this.queryGroup.getRawValue(),
-      e => this._alerts.pushAlert(new Alert(Alerts.ALERT_DANGER, e))
-    );
-  }
+  // public
 
   submit(): void {
-    if (this.queryGroup.valid && this.alignmentGroup.valid) {
-      if (this.queryGroup.dirty) {
-        this.submitted.emit();
-        let params = this.queryGroup.getRawValue();
-        this._geneSearch();
-        this.queryGroup.reset(params);
-        this._url.updateParams(Object.assign({}, params));
-      }
-      if (this.alignmentGroup.dirty) {
-        this.submitted.emit();
-        let params = this.alignmentGroup.getRawValue();
-        this._alignmentService.updateParams(params);
-        this.alignmentGroup.reset(params);
-        this._url.updateParams(Object.assign({}, params));
-      }
+    if (this.blockGroup.valid && this.queryGroup.valid && this.alignmentGroup.valid) {
+      this.valid.emit();
+      // submit block params
+      this._submitGroup(this.blockGroup, (params) => {
+        this.macroTracksService.updateParams(params);
+      });
+      // submit query params
+      this._submitGroup(this.queryGroup, (params) => {
+        this.microTracksService.updateParams(params);
+      });
+      // submit alignment params
+      this._submitGroup(this.alignmentGroup, (params) => {
+        this.alignmentService.updateParams(params);
+      });
     } else {
       this.invalid.emit();
     }
+  }
+
+  // private
+
+  private _submitGroup(group, callback): void {
+    if (group.dirty) {
+      const params = group.getRawValue();
+      callback(params);
+      group.reset(params);
+    }
+  }
+
+  private _updateGroup(group, params) {
+    group.patchValue(params);
   }
 }

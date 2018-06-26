@@ -15,14 +15,14 @@ import { DetailsService } from "../../services/details.service";
     <h4>{{family.name}}</h4>
     <p><a href="#/multi/{{geneList}}">View genes in pan-view</a></p>
     <p *ngIf="linkablePhylo"><a href="/chado_gene_phylotree_v2?family={{family.name}}&gene_name={{geneList}}">View genes in phylogram</a></p>
-    <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?subtab=upload&type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
-    <!-- or, for the posted version... (though this didn't seem to work in the angular context)
-    <form action="https://intermine.legumefederation.org/legumemine/bag.do" method="POST">
+    <!--<p ><a href="https://mines.legumeinfo.org/legumemine/bag.do?subtab=upload&type=Gene&text={{geneListURLFormatted}}">Create gene list in LegumeMine</a></p>-->
+    <!-- or, for the posted version... (this simple formulation didn't seem to work in the angular context, so went with the onClick js)-->
+    <!--<form action="https://intermine.legumefederation.org/legumemine/bag.do" method="POST">-->
+    <form id="legumemine-form" onClick="document.getElementById('legumemine-form').submit();" action='https://mines.legumeinfo.org/legumemine/bag.do' method="POST">
          <input type="hidden" name="type" value="Gene"/>
-         <input type="hidden" name="text" value="{{geneListFormatted}}"/>
-         <input type="submit" name="submit" value="Create gene list in LegumeMine"/>
+         <input type="hidden" name="text" value="{{geneListFormFormatted}}"/>
+         <button type="submit">Create gene list in LegumeMine</button>
     </form>
-    -->
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of genes">
@@ -37,7 +37,8 @@ export class FamilyDetailComponent implements OnChanges {
 
   genes: Gene[];
   geneList: string;
-  geneListFormatted: string;
+  geneListURLFormatted: string;
+  geneListFormFormatted: string;
   
   linkablePhylo: boolean;
 
@@ -57,7 +58,11 @@ export class FamilyDetailComponent implements OnChanges {
         return g.family;
       })).size === 1;
       this.geneList = this.genes.map((x) => x.name).join(",");
-      this.geneListFormatted = this.genes.map((x) => x.name).join('%0A');
+      this.geneListURLFormatted = this.genes.map((x) => x.name).join('%0A');
+      this.geneListFormFormatted = this.genes.map((x) => x.name).join('\n');
     }
+  }
+  onSubmit() {
+    console.log("well it submitted anyway");
   }
 }

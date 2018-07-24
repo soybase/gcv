@@ -1,6 +1,5 @@
 // Angular
-import { Component, ElementRef, OnInit, ViewChild } from "@angular/core";
-
+import { Component } from "@angular/core";
 // App services
 import { ORDER_ALGORITHMS } from "../../algorithms";
 import { FilterService } from "../../services";
@@ -20,23 +19,18 @@ import { FilterService } from "../../services";
     </form>
   `,
 })
-export class OrderingComponent implements OnInit {
+export class OrderingComponent {
 
   algorithms = ORDER_ALGORITHMS;
-  model: any = {order: this.algorithms[0].id};
+  model: any = {order: this.algorithms[0].id};  // default: chromosome name
 
-  private ids = this.algorithms.map((a) => a.id);
-
-  constructor(private filterService: FilterService) { }
-
-  ngOnInit(): void {
+  constructor(private filterService: FilterService) {
+    filterService.orderAlgorithm
+      .subscribe((order) => this.model.order = order.id);
     this.update();
   }
 
   update(): void {
-    const idx = this.ids.indexOf(this.model.order);
-    if (idx !== -1) {
-      this.filterService.setOrder(this.model.order);
-    }
+    this.filterService.setOrder(this.model.order);
   }
 }

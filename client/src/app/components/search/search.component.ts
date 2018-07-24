@@ -298,6 +298,12 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
     // create a util function that returns all objects in prototype chain and spead
     // into assign
     const g = Object.assign(Object.create(Gene.prototype), Object.getPrototypeOf(gene));
+    //HACK: needed for determination of alignedGene for CoGe linking; ask acleary what the right way to get this info back is; there was some previous breakage
+    //around linkout functionality that I think can be seen here:
+    //git diff 7eeff865418c4db05b63355f241beed497c1b52d 7155a9733c990652a5aafacce9bd5b46d3d70313 src/app/components/search/search.component.ts
+    //I guess we didn't notice at the time that we had lost the CoGe function
+    //which only exists on legume*-settings branches
+    g.x = gene.x;
     this.selectedDetail = g;
   }
 

@@ -2,13 +2,12 @@
 import { Component, ElementRef, OnInit, ViewChild } from "@angular/core";
 
 // App services
-import { ORDER_ALGORITHMS } from "../../constants/order-algorithms";
-import { FilterService } from "../../services/filter.service";
+import { ORDER_ALGORITHMS } from "../../algorithms";
+import { FilterService } from "../../services";
 
 @Component({
-  moduleId: module.id.toString(),
   selector: "app-ordering",
-  styles: [ ".input-group { display: inline; }" ],
+  styles: [ "" ],
   template: `
     <form #orderForm="ngForm">
       <div class="input-group">

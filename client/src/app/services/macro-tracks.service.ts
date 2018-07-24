@@ -1,23 +1,18 @@
 // Angular
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { Observable } from "rxjs/Observable";
-import { _throw } from "rxjs/observable/throw";
-import { catchError, map } from "rxjs/operators";
+import { Observable, combineLatest, merge, onErrorResumeNext, throwError } from "rxjs";
+import { catchError, filter, map } from "rxjs/operators";
 // store
 import { Store } from "@ngrx/store";
-import * as routerActions from "../actions/router.actions";
-import * as fromRoot from "../reducers";
-import * as fromMacroChromosome from "../reducers/macro-chromosome.store";
-import * as fromMacroTracks from "../reducers/macro-tracks.store";
-import * as fromMultiMacroTracks from "../reducers/multi-macro-tracks.store";
-import * as fromRouter from "../reducers/router.store";
+import * as routerActions from "../store/actions/router.actions";
+import * as fromRoot from "../store/reducers";
+import * as fromMacroChromosome from "../store/reducers/macro-chromosome.store";
+import * as fromMacroTracks from "../store/reducers/macro-tracks.store";
+import * as fromMultiMacroTracks from "../store/reducers/multi-macro-tracks.store";
+import * as fromRouter from "../store/reducers/router.store";
 // app
-import { AppRoutes } from "../constants/app-routes";
-import { BlockParams } from "../models/block-params.model";
-import { MacroChromosome } from "../models/macro-chromosome.model";
-import { MacroTrack } from "../models/macro-track.model";
-import { MacroTracks } from "../models/macro-tracks.model";
+import { BlockParams, MacroChromosome, MacroTrack, MacroTracks } from "../models";
 import { HttpService } from "./http.service";
 
 @Injectable()
@@ -50,7 +45,7 @@ export class MacroTracksService extends HttpService {
         macroChromosome.name = chromosome;
         return macroChromosome;
       }),
-      catchError((error) => _throw(error)),
+      catchError((error) => throwError(error)),
     );
   }
 
@@ -58,14 +53,14 @@ export class MacroTracksService extends HttpService {
     chromosomes: {name: string, genus: string, species: string}[],
     serverID: string
   ): Observable<[{name: string, genus: string, species: string}, MacroChromosome]> {
-    return Observable.merge(...chromosomes.map((chromosome) => {
+    return merge(onErrorResumeNext(...chromosomes.map((chromosome) => {
       return this.getChromosome(chromosome.name, serverID).pipe(
         map((result): [{name: string, genus: string, species: string}, MacroChromosome] => {
           return [chromosome, result];
         }),
-        catchError((error) => _throw(error)),
+        catchError((error) => throwError(error)),
       );
-    }));
+    })));
   }
 
   getMacroTracks(
@@ -86,7 +81,7 @@ export class MacroTracksService extends HttpService {
         this._parseTracks(chromosome, macroTracks);
         return macroTracks;
       }),
-      catchError((error) => _throw(error)),
+      catchError((error) => throwError(error)),
     );
   }
 
@@ -97,20 +92,19 @@ export class MacroTracksService extends HttpService {
     targets: string[] = [],
   ): Observable<[string, MacroTrack[]]> {
     // send a request for each server
-    return Observable.merge(...serverIDs.map((serverID) => {
+    return merge(onErrorResumeNext(...serverIDs.map((serverID) => {
       return this.getMacroTracks(chromosome, blockParams, serverID, targets).pipe(
-        map((tracks) => [serverID, tracks]),
-        catchError((error) => _throw([serverID, error])),
+        map((tracks): [string, MacroTrack[]] => [serverID, tracks]),
+        catchError((error) => throwError([serverID, error])),
       );
-    }));
+    })));
   }
 
   // finds the nearest gene on the query chromosome and pushes it to the store
   // TODO: add source to macroChromosome so route isns't needed
   nearestGene(position: number): void {
     // get the current search query gene and macro-synteny query chromosome
-    Observable
-      .combineLatest(this.searchRoute, this.macroChromosome)
+    combineLatest(this.searchRoute, this.macroChromosome)
       .subscribe(([route, chromosome]) => {
         const locations = chromosome.locations;
         const genes = chromosome.genes;
@@ -130,7 +124,7 @@ export class MacroTracksService extends HttpService {
           }
         }
         // navigate to the new gene in the url
-        const url = "/" + AppRoutes.SEARCH +
+        const url = "/search" +
                     "/" + route.source +
                     "/" + genes[mid];
         this.store.dispatch(new routerActions.Go({path: [url, { routeParam: 1 }]}));

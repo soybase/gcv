@@ -1,18 +1,16 @@
 // Angular
 import { Injectable } from "@angular/core";
-import { Observable } from "rxjs/Observable";
+import { Observable } from "rxjs";
 // store
 import { Store } from "@ngrx/store";
-import * as routerActions from "../actions/router.actions";
-import * as fromRoot from "../reducers";
-import * as fromAlignedMicroTracks from "../reducers/aligned-micro-tracks.store";
-import * as fromRouter from "../reducers/router.store";
+import * as routerActions from "../store/actions/router.actions";
+import * as fromRoot from "../store/reducers";
+import * as fromAlignedMicroTracks from "../store/reducers/aligned-micro-tracks.store";
+import * as fromRouter from "../store/reducers/router.store";
 // app
 import { GCV } from "../../assets/js/gcv";
-import { ALIGNMENT_ALGORITHMS } from "../constants/alignment-algorithms";
-import { AlignmentParams } from "../models/alignment-params.model";
-import { Group } from "../models/group.model";
-import { MicroTracks } from "../models/micro-tracks.model";
+import { ALIGNMENT_ALGORITHMS } from "../algorithms";
+import { AlignmentParams, Group, MicroTracks } from "../models";
 
 @Injectable()
 export class AlignmentService {

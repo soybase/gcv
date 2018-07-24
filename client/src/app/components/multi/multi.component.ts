@@ -2,33 +2,23 @@
 import { AfterViewInit, Component, ComponentFactory, ComponentFactoryResolver,
   ComponentRef, ElementRef, OnDestroy, OnInit, ViewChild, ViewContainerRef,
   ViewEncapsulation } from "@angular/core";
-import { Observable } from "rxjs/Observable";
-import { Subject } from "rxjs/Subject";
+import { Subject, combineLatest } from "rxjs";
+import { filter, takeUntil, withLatestFrom } from "rxjs/operators";
 import { GCV } from "../../../assets/js/gcv";
 // app
 import * as Split from "split.js";
 import { AppConfig } from "../../app.config";
-import { Alert } from "../../models/alert.model";
-import { Family } from "../../models/family.model";
-import { Gene } from "../../models/gene.model";
-import { Group } from "../../models/group.model";
-import { MacroTracks } from "../../models/macro-tracks.model";
-import { MicroTracks } from "../../models/micro-tracks.model";
-import { microTracksSelector } from "../../selectors/micro-tracks.selector";
-import { multiMacroTracksSelector } from "../../selectors/multi-macro-tracks.selector";
-import { AlignmentService } from "../../services/alignment.service";
-import { FilterService } from "../../services/filter.service";
-import { MacroTracksService } from "../../services/macro-tracks.service";
-import { MicroTracksService } from "../../services/micro-tracks.service";
+import { Alert, Family, Gene, Group, MacroTracks, MicroTracks } from "../../models";
+import { microTracksOperator, multiMacroTracksOperator } from "../../operators";
+import { AlignmentService, FilterService, MacroTracksService, MicroTracksService } from "../../services";
 import { AlertComponent } from "../shared/alert.component";
 
 @Component({
   encapsulation: ViewEncapsulation.None,
-  moduleId: module.id.toString(),
   selector: "multi",
-  styles: [ require("./multi.component.scss"),
-            require("../../../assets/css/split.scss") ],
-  template: require("./multi.component.html"),
+  styleUrls: [ "./multi.component.scss",
+               "../../../assets/css/split.scss" ],
+  templateUrl: "./multi.component.html",
 })
 export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   // view children
@@ -69,7 +59,6 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   private destroy: Subject<boolean>;
 
   constructor(private alignmentService: AlignmentService,
-              private config: AppConfig,
               private resolver: ComponentFactoryResolver,
               private filterService: FilterService,
               private macroTracksService: MacroTracksService,
@@ -102,7 +91,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   ngOnInit(): void {
     // subscribe to HTTP requests
     this.macroTracksService.requests
-      .takeUntil(this.destroy)
+      .pipe(takeUntil(this.destroy))
       .subscribe(([args, request]) => {
         if (args.requestType === "chromosome") {
           const what = "\"" + args.body.chromosome + "\"";
@@ -114,7 +103,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
         }
       });
     this.microTracksService.requests
-      .takeUntil(this.destroy)
+      .pipe(takeUntil(this.destroy))
       .subscribe(([args, request]) => {
         if (args.requestType === "microMulti") {
           this._requestToAlertComponent(args.serverID, request, "tracks", this.microAlerts);
@@ -123,35 +112,33 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
 
     // subscribe to micro track data
     this.alignmentService.alignedMicroTracks
-      .withLatestFrom(this.microTracksService.routeParams)
-      .takeUntil(this.destroy)
+      .pipe(
+        withLatestFrom(this.microTracksService.routeParams),
+        takeUntil(this.destroy))
       .subscribe(([tracks, route]) => {
         this._onAlignedMicroTracks(tracks as MicroTracks, route);
       });
 
-    const filteredMicroTracks = Observable
-      .combineLatest(
+    const filteredMicroTracks =
+      combineLatest(
         this.alignmentService.alignedMicroTracks,
         this.filterService.regexpAlgorithm,
-        this.filterService.orderAlgorithm,
-      )
-      .let(microTracksSelector({prefix: (t) => "group " + t.cluster + " - "}));
+        this.filterService.orderAlgorithm)
+      .pipe(microTracksOperator({prefix: (t) => "group " + t.cluster + " - "}));
 
     filteredMicroTracks
-      .takeUntil(this.destroy)
+      .pipe(takeUntil(this.destroy))
       .subscribe((tracks) => {
         this.microTracks = tracks as MicroTracks;
       });
 
     // subscribe to macro track data
-    Observable
-      .combineLatest(
+      combineLatest(
         this.macroTracksService.multiMacroTracks
-          .filter((tracks) => tracks !== undefined),
-        filteredMicroTracks,
-      )
-      .let(multiMacroTracksSelector())
-      .takeUntil(this.destroy)
+          .pipe(filter((tracks) => tracks !== undefined)),
+        filteredMicroTracks)
+      .pipe(multiMacroTracksOperator())
+      .pipe(takeUntil(this.destroy))
       .subscribe((tracks) => {
         this._onMacroTracks(tracks);
       });
@@ -212,7 +199,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
 
       // macro viewer
       // TODO: provide a color function for each source - federation!
-      const s: any = this.config.getServer(tracks.groups[0].source);
+      const s: any = AppConfig.getServer(tracks.groups[0].source);
       if (s !== undefined && s.macroColors !== undefined) {
         this.macroColors = s.macroColors.function;
       } else {
@@ -313,7 +300,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   private _requestToAlertComponent(serverID, request, what, container) {
-    const source = this.config.getServer(serverID).name;
+    const source = AppConfig.getServer(serverID).name;
     const factory: ComponentFactory<AlertComponent> = this.resolver.resolveComponentFactory(AlertComponent);
     const componentRef: ComponentRef<AlertComponent> = container.createComponent(factory);
     // EVIL: Angular doesn't have a defined method for hooking dynamic components into
@@ -331,7 +318,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
     );
     componentRef.instance.ngOnChanges({});
     request
-      .takeUntil(componentRef.instance.onClose)
+      .pipe(takeUntil(componentRef.instance.onClose))
       .subscribe(
         (response) => {
           componentRef.instance.alert = new Alert(

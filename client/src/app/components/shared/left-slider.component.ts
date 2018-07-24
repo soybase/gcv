@@ -2,12 +2,9 @@
 import { Component, Input, OnChanges, SimpleChanges } from "@angular/core";
 
 // App
-import { toggleSlider } from "../../animations/toggle-slider.animation";
-import { SliderStates } from "../../constants/slider-states";
-import { Family } from "../../models/family.model";
-import { Gene } from "../../models/gene.model";
-import { Group } from "../../models/group.model";
-import { MicroTracks } from "../../models/micro-tracks.model";
+import { toggleSlider } from "../../animations";
+import { SliderStates } from "../../constants";
+import { Family, Gene, Group, MicroTracks } from "../../models";
 
 enum DetailTypes {
   PARAMS,
@@ -18,10 +15,9 @@ enum DetailTypes {
 
 @Component({
   animations: [ toggleSlider ],
-  moduleId: module.id.toString(),
   selector: "left-slider",
-  styles: [ require("./left-slider.component.scss") ],
-  template: require("./left-slider.component.html"),
+  styleUrls: [ "./left-slider.component.scss" ],
+  templateUrl: "./left-slider.component.html",
 })
 export class LeftSliderComponent implements OnChanges {
   @Input() selected: Family | Gene | Group | object;

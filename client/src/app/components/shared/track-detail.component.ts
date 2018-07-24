@@ -1,11 +1,10 @@
 // Angular
 import { Component, Input, OnChanges, SimpleChanges } from "@angular/core";
-
 // App
-import { Group } from "../../models/group.model";
+import { AppConfig } from "../../app.config";
+import { Gene, Group, Server } from "../../models";
 
 @Component({
-  moduleId: module.id.toString(),
   selector: "track-detail",
   styles: [ "" ],
   template: `
@@ -23,9 +22,9 @@ import { Group } from "../../models/group.model";
     <ul>
       <li *ngFor="let gene of track.genes">
         {{gene.name}}: {{gene.fmin}} - {{gene.fmax}}
-        <ul *ngIf="gene.family != ''">
+        <ul *ngIf="familyTreeLink !== undefined && gene.family != ''">
           <li>
-            Family: <a href="/chado_gene_phylotree_v2?family={{gene.family}}&gene_name={{gene.name}}">{{gene.family}}</a>
+            Family: <a href="{{familyTreeLink}}{{gene.family}}">{{gene.family}}</a>
           </li>
         </ul>
       </li>
@@ -33,11 +32,15 @@ import { Group } from "../../models/group.model";
   `,
 })
 export class TrackDetailComponent implements OnChanges {
+
+  private _serverIDs = AppConfig.SERVERS.map(s => s.id);
+
   @Input() track: Group;
 
   focus: string;
   geneListURLFormatted: string;
   geneListFormFormatted: string;
+  familyTreeLink: string;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.track !== undefined) {
@@ -45,6 +48,15 @@ export class TrackDetailComponent implements OnChanges {
       this.focus = this.track.genes[idx].name;
       this.geneListURLFormatted = this.track.genes.map(x => x.name).join('%0A');
       this.geneListFormFormatted = this.track.genes.map(x => x.name).join('\n');
+    }
+
+    this.familyTreeLink = undefined;
+    const idx = this._serverIDs.indexOf(this.track.genes[0].source);
+    if (idx != -1) {
+      const s: Server = AppConfig.SERVERS[idx];
+      if (s.hasOwnProperty("familyTreeLink")) {
+        this.familyTreeLink = s.familyTreeLink.url;
+      }
     }
   }
 }

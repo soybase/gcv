@@ -2,10 +2,9 @@
 import { Component, ElementRef, OnInit, ViewChild } from "@angular/core";
 
 // App
-import { FilterService } from "../../services/filter.service";
+import { FilterService } from "../../services";
 
 @Component({
-  moduleId: module.id.toString(),
   selector: "app-regexp",
   styles: [ "form button { margin-right: 0; }" ],
   template: `

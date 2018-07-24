@@ -1,28 +1,93 @@
-<main>
-<header></header>
-<div id="instructions">
-<h1>Welcome, to the Genomic Context Viewer!</h1>
-<p>
-The Genomic Context Viewer (GCV) is a web-app that visualizes genomic context data provided by third party services, such as the <a target="_blank" href="http://www.legumeinfo.org">Legume Information System</a>.
-It allows users to view regions of genomes considered primarily with respect to the ordering and orientation of their annotated gene content.
-By handling sequences of gene family memberships as a unit of search and comparison, the user interface is made sufficiently responsive to enable quick assessment of the levels of conservation, novelty, and various types of structural events that can serve to direct the user to more detailed explorations at finer levels of granularity in other tools.
-</p>
-<app-gene-search></app-gene-search>
-<!--
-<h2>Use Cases</h2>
-<p>Some use cases should go here</p>
-<h2>Enter your gene name here</h2>
-<app-gene-search></app-gene-search>
--->
-<h2>Examples</h2>
-<li>
-Common bean gene <a href="/lis_context_viewer/#/search/lis/phavu.Phvul.002G085200?neighbors=10&matched=4&intermediate=5&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&regexp=&order=distance&sources=lis">phavu.Phvul.002G085200</a> highly conserved across syntenic contexts among legumes (with inversion in soybean)
-</li>
-<li>
-"Search" (<b><i>reference-aligned</i></b>) <a href="/lis_context_viewer/#/search/lis/medtr.Medtr3g110360?neighbors=8&sources=lis&regexp=&matched=4&intermediate=5&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance">view of the Medicago truncatula gene (medtr.Medtr3g110360)</a> (try the Dotplots tab on this too) </li>
-<li>
-"Multi" (<b><i>within-cluster multiple alignment</i></b>) <a href="/lis_context_viewer/#/multi/lotja.Lj0g3v0166889,cicar.Ca_05015_gene,glyma.Glyma.06G088000,glyma.Glyma.04G086500,araip.Araip.Z4RG3,vigra.Vradi05g08580,araip.Araip.0T13B,medtr.Medtr3g110360,cajca.C.cajan_36467_gene,phavu.Phvul.009G111700,aradu.Aradu.M206V?neighbors=8&sources=lis&regexp=">view of a set of genes</a> from the same family (tryptophan-tRNA ligase). </li>
-<h2>Feedback and features and bugs, oh my!</h2>
-<p>GCV is on GitHub: <a target="_blank" href="https://github.com/legumeinfo/lis_context_viewer">https://github.com/legumeinfo/lis_context_viewer</a>. Swing by, if you feel so inclined.</p>
-</div>
+<main id="top">
+  <header></header>
+
+  <section class="jumbotron text-center">
+    <div class="container">
+      <h1 class="jumbotron-heading">Genome Context Viewer</h1>
+      <p class="lead text-muted">A web-app that visualizes genomic context data provided by third party services in a single, federated interface by using gene-family assignment as a unit of search and comparison.</p>
+      <p>
+        <a href="#" class="btn btn-primary my-2" (click)="scrollTo($event, '#features')">Get started</a>
+        <a href="https://academic.oup.com/bioinformatics/article/34/9/1562/4673199" target="_blank" class="btn btn-outline-primary my-2">Read the paper</a>
+        <a href="https://github.com/legumeinfo/lis_context_viewer" target="_blank" class="btn btn-secondary my-2"><span class="fa fa-github"></span> GitHub</a>
+      </p>
+    </div>
+  </section>
+
+  <div class="container">
+
+    <div class="row">
+      <div id="tour" class="col-lg-4">
+        <h2><span class="fa fa-play"></span> Take the Tour</h2>
+        <p>Take an interactive tour and learn about each of the GCV views and the components that compose them.</p>
+        <p><a class="btn btn-secondary" href="#" role="button" (click)="startTour($event)">Begin tour &raquo;</a></p>
+      </div>
+      <div class="col-lg-4">
+        <h2><span class="fa fa-book"></span> Read the Docs</h2>
+        <p>Documentation describing GCV features and use cases in detail are available online.</p>
+        <p><a class="btn btn-secondary" href="https://github.com/legumeinfo/lis_context_viewer/wiki" target="_blank" role="button">Start reading &raquo;</a></p>
+      </div>
+      <div class="col-lg-4">
+        <h2><span class="fa fa-code"></span> Developer Zone</h2>
+        <p>GCV is a federated tool that can consume data from a variety of data providers. Learn how to setup your own GCV data services and configure the user interface.</p>
+        <p><a class="btn btn-secondary" href="https://github.com/legumeinfo/lis_context_viewer/wiki" target="_blank" role="button">View details &raquo;</a></p>
+      </div>
+    </div>
+
+    <hr id="features" class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-5 flex-shrink-1">
+        <h2 class="featurette-heading">Search View<!-- <span class="text-muted">It'll blow your mind.</span>--></h2>
+        <p class="lead">Search across multiple data providers for genomic contexts similar to your query and align the results to the query in a manner that emphasizes structural variation.</p>
+        <p class="lead">Put the results into context with chromosome-scale synteny blocks computed on-demand across data providers.</p>
+        <p class="lead">And better understand local and global strucuture with pairwise gene-loci dot plots.</p>
+      </div>
+      <div class="col-md-7 flex-shrink-1">
+        <img #searchScreenshot class="featurette-image img-fluid mx-auto" src="{{dashboard.search.img}}" alt="Search view screenshot">
+      </div>
+      <div id="container"></div>
+    </div>
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-5 order-md-2">
+        <h2 class="featurette-heading">Multi View<!-- <span class="text-muted">See for yourself.</span>--></h2>
+        <p class="lead">Retrieve multiple genomic contexts from different data providers, group them based on shared gene-family content, and perform a multiple sequence alignment of each group that emphasizes structural variation.</p>
+        <p class="lead">Put the results into context with chromosome-scale synteny blocks computed on-demand across data providers and displayed in a Circos-style viewer.</p>
+      </div>
+      <div class="col-md-7 order-md-1">
+        <img #multiScreenshot class="featurette-image img-fluid mx-auto" src="{{dashboard.multi.img}}" alt="Multi view screenshot">
+      </div>
+    </div>
+
+    <hr class="featurette-divider" *ngIf="dashboard.examples.length > 0">
+
+    <div class="row featurette" *ngIf="dashboard.examples.length > 0">
+      <div class="col-md-12">
+        <h2 class="featurette-heading">{{brand.name}} Examples<!-- <span class="text-muted">Checkmate.</span>--></h2>
+        <ul>
+          <li *ngFor="let example of dashboard.examples" [innerHTML]="example"></li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette" *ngIf="dashboard.examples.length > 0">
+      <div class="col-md-12">
+        <h2 class="featurette-heading"><span class="fa fa-search"></span> Search Now!<!-- <span class="text-muted">Checkmate.</span>--></h2>
+        <p>To get started, enter the name of a gene and select the server that provides it. A genomic context will be made from the gene and the genes that flank it, then similar contexts will be searched for.</p>
+        <app-gene-search></app-gene-search>
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+
+  </div>
+
+  <footer class="container">
+    <p class="float-right"><a href="#" (click)="scrollTo($event, '#top')">Back to top</a></p>
+    <p><span class="fa fa-copyright"></span> {{ copyrightYear }} <a href="https://legumeinfo.org/" target="_blank">Legume Information System</a> &middot; <span class="fa fa-osi"></span> <a href="https://github.com/legumeinfo/lis_context_viewer/blob/master/LICENSE" target="_blank">License</a></p>
+  </footer>
 </main>

@@ -82,7 +82,7 @@ var defaultTour = (function () {
 
   // tour variables
 
-  var basePath = "";
+  var basePath = "/lis_context_viewer";
   var instructionsUrl = {
     path: "/instructions",
     queryParams: {}

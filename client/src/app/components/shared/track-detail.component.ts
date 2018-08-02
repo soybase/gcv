@@ -16,6 +16,7 @@ import { Group } from "../../models/group.model";
     <!--<form action="https://intermine.legumefederation.org/legumemine/bag.do" method="POST">-->
     <form id="legumemine-form" action='https://mines.legumeinfo.org/legumemine/bag.do' method="POST" target="_blank">
          <input type="hidden" name="type" value="Gene"/>
+         <input type="hidden" name="subtab" value="upload"/>
          <input type="hidden" name="text" value="{{geneListFormFormatted}}"/>
          <button onClick="document.getElementById('legumemine-form').submit();" type="submit">Create gene list in LegumeMine</button>
     </form>

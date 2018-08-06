@@ -9,11 +9,12 @@ This repository contains GCV itself (the client) and a basic server that demonst
 
 ## Running GCV
 GCV is a standalone web-app that can be run locally on a personal computer or integrated into a website.
-To run GCV, locally or as part of a website, you must first compile the program usingg [npm](https://www.npmjs.com/):
+To run GCV, locally or as part of a website, you must first compile the program using [npm](https://www.npmjs.com/):
 
     $ cd client
     client/ $ npm install
     client/ $ npm run build
+    client/ $ ng build [ --base-href /my_nonroot_base_path/ ]
     
 This will create an `index.html` in the `client/dist/` directory.
 Open this file in a web-browser to run GCV locally, or configure your site to serve it as a static page.

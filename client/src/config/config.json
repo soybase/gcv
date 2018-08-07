@@ -22,7 +22,8 @@
     "geneSearchPlaceholder": "e.g. phavu.Phvul.002G100400"
   },
   "tours": [
-    {"script": "default.js", "name": "defaultTour"}
+    {"script": "default.js", "name": "defaultTour"},
+    {"script": "gene-to-phylotree-to-context-viewer.js", "name": "tour"}
   ],
   "servers": [
     {

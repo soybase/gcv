@@ -83,6 +83,10 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   macroLegendArgs: any;
   macroTracks: MacroTracks;
 
+  // store the vertical Split for resizing
+  private verticalSplit: any;
+  private legendWidths = [0, 0];  // [micro, macro]
+
   // emits when the component is destroyed
   private destroy: Subject<boolean>;
 
@@ -102,7 +106,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   // Angular hooks
 
   ngAfterViewInit(): void {
-    Split([this.left.nativeElement, this.right.nativeElement], {
+    this.verticalSplit = Split([this.left.nativeElement, this.right.nativeElement], {
         direction: "horizontal",
         minSize: 0,
       });
@@ -315,6 +319,18 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
 
   // private
 
+  private _setSplitWidth(legend: number, size: any): void {
+    if (this.verticalSplit !== undefined) {
+      this.legendWidths[legend] = size.width;
+      const width = Math.max(...this.legendWidths);
+      const totalWidth = this.left.nativeElement.offsetWidth +
+                         this.right.nativeElement.offsetWidth;
+      const rightWidth = ((width + 50) / totalWidth) * 100;
+      const leftWidth = 100 - rightWidth;
+      this.verticalSplit.setSizes([leftWidth, rightWidth]);
+    }
+  }
+
   private _getHeaderAlert(tracks: MicroTracks, numTracks: number): Alert {
     let message = numTracks + " track" + ((numTracks !== 1) ? "s" : "") + " returned; ";
     const numAligned = tracks.groups.length - 1;
@@ -388,6 +404,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
       autoResize: true,
       highlight,
       selector: "genus-species",
+      sizeCallback: this._setSplitWidth.bind(this, 1),
     };
   }
 
@@ -421,6 +438,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
       multiDelimiter: ",",
       selectiveColoring: familySizes,
       selector: "family",
+      sizeCallback: this._setSplitWidth.bind(this, 0),
     };
   }
 
@@ -538,10 +556,6 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
         return l;
       }, []);
       this.macroTracks = tracks;
-      // BUGFIX: bootstrap tour prevents macro-synteny viewer OnChanges Angular
-      // hook from firing when the "data" input (this.macroTracks) is updated.
-      // The resize event is used to trigger the hook.
-      window.dispatchEvent(new Event("resize"));
     }
   }
 

@@ -2,6 +2,7 @@
   "brand": {
     "url": "/",
     "img": "/sites/all/themes/legumeinfo_theme/images/legumeinfo_logo.png",
+    "favicon": "/sites/default/files/favicon_0.ico",
     "name": "LIS - Legume Information System",
     "slogan": "Information about legume traits for crop improvement"
   },

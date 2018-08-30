@@ -1,5 +1,4 @@
-import { Algorithm } from "../models/algorithm.model";
-import { MicroTracks } from "../models/micro-tracks.model";
+import { Algorithm, MicroTracks } from "../models";
 
 export function regexpFilter(
   regexp: string,
@@ -27,5 +26,5 @@ export function regexpFilter(
 };
 
 export function regexpAlgorithmFactory(regexp: string): Algorithm {
-  return new Algorithm("regexp", "Regular Expression", regexpFilter.bind(this, regexp));
+  return new Algorithm("regexp", regexp, regexpFilter.bind(this, regexp));
 }

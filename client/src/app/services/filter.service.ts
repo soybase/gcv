@@ -1,39 +1,53 @@
 // Angular
 import { Injectable } from "@angular/core";
-import { Observable } from "rxjs/Observable";
+import { BehaviorSubject, Observable } from "rxjs";
+import { filter } from "rxjs/operators";
 // store
 import { Store } from "@ngrx/store";
-import * as orderFilterActions from "../actions/order-filter.actions";
-import * as regexpFilterActions from "../actions/regexp-filter.actions";
-import * as fromRoot from "../reducers";
-import * as fromOrderFilter from "../reducers/order.store";
-import * as fromRegexpFilter from "../reducers/regexp.store";
+import * as routerActions from "../store/actions/router.actions";
+import * as fromRoot from "../store/reducers";
+import * as fromRouter from "../store/reducers/router.store";
 // app
-import { ORDER_ALGORITHMS } from '../constants/order-algorithms';
-import { Algorithm } from "../models/algorithm.model";
-import { regexpAlgorithmFactory } from "../utils/regexp-algorithm-factory.util";
+import { ORDER_ALGORITHMS } from "../algorithms";
+import { Algorithm } from "../models";
+import { regexpAlgorithmFactory } from "../utils";
 
 @Injectable()
 export class FilterService {
   orderAlgorithm: Observable<Algorithm>;
   regexpAlgorithm: Observable<Algorithm>;
+  private orderSubject = new BehaviorSubject<Algorithm>(undefined);
+  private regexpSubject = new BehaviorSubject<Algorithm>(undefined);
 
   private orderIDs = ORDER_ALGORITHMS.map(a => a.id);
 
   constructor(private store: Store<fromRoot.State>) {
-    this.orderAlgorithm = this.store.select(fromOrderFilter.getOrderFilterAlgorithm);
-    this.regexpAlgorithm = this.store.select(fromRegexpFilter.getRegexpFilterAlgorithm);
+    this.store.select(fromRouter.getOrder)
+      .subscribe((order) => {
+        const i = this.orderIDs.indexOf(order);
+        if (i > -1) {
+          this.orderSubject.next(ORDER_ALGORITHMS[i]);
+        }
+      });
+    this.orderAlgorithm = this.orderSubject.asObservable().pipe(
+      filter((order) => order !== undefined));
+    this.store.select(fromRouter.getRegexp)
+      .subscribe((regexp) => {
+        this.regexpSubject.next(regexpAlgorithmFactory(regexp));
+      });
+    this.regexpAlgorithm = this.regexpSubject.asObservable().pipe(
+      filter((regexp) => regexp !== undefined));
   }
 
   setOrder(order: string): void {
-    const i = this.orderIDs.indexOf(order);
-    if (i > -1) {
-      this.store.dispatch(new orderFilterActions.New(ORDER_ALGORITHMS[i]));
-    }
+    const path = [];
+    const query = Object.assign({}, {order});
+    this.store.dispatch(new routerActions.Go({path, query}));
   }
 
   setRegexp(regexp: string): void {
-    const algorithm = regexpAlgorithmFactory(regexp);
-    this.store.dispatch(new regexpFilterActions.New(algorithm));
+    const path = [];
+    const query = Object.assign({}, {regexp});
+    this.store.dispatch(new routerActions.Go({path, query}));
   }
 }

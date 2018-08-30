@@ -6,7 +6,6 @@ import { Router } from "@angular/router";
 import { AppConfig } from "../../app.config";
 
 @Component({
-  moduleId: module.id.toString(),
   selector: "app-gene-search",
   styles: [`
     .select {
@@ -16,12 +15,12 @@ import { AppConfig } from "../../app.config";
     form button { margin-right: 0; }
   `],
   template: `
-    <form (ngSubmit)="submit()" #gneSearchForm="ngForm">
+    <form (ngSubmit)="submit()" #geneSearchForm="ngForm">
       <div class="input-group">
         <input type="text" class="form-control" id="gene-search"
           [(ngModel)]="model.gene" name="gene"
           #geneSearch="ngModel"
-          placeholder="e.g. phavu.Phvul.002G100400" >
+          placeholder="{{placeholder}}" >
         <span class="input-group-btn">
           <select class="select form-control" [(ngModel)]="model.source" name="source">
             <option *ngFor="let s of servers" [ngValue]="s">{{s.name}}</option>
@@ -36,8 +35,9 @@ import { AppConfig } from "../../app.config";
 })
 export class GeneSearchComponent {
 
-  public servers: any[] = AppConfig.SERVERS;
-  public model: any = {source: this.servers[0], gene: ""};
+  servers: any[] = AppConfig.SERVERS;
+  model: any = {source: this.servers[0], gene: ""};
+  placeholder: string = AppConfig.MISCELLANEOUS.geneSearchPlaceholder;
 
   constructor(private router: Router) { }
 

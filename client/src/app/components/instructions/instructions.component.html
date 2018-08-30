@@ -1,48 +1,93 @@
-<main>
+<main id="top">
   <header></header>
-    <div id="instructions">
-    <h1>Welcome, to the Genomic Context Viewer!</h1>
-    <p>
-    The Genomic Context Viewer (GCV) is a web-app that visualizes genomic context data provided by third party services, such as the <a target="_blank" href="http://www.legumeinfo.org">Legume Information System</a>.
-    It allows users to view regions of genomes considered primarily with respect to the ordering and orientation of their annotated gene content.
-    By handling sequences of gene family memberships as a unit of search and comparison, the user interface is made sufficiently responsive to enable quick assessment of the levels of conservation, novelty, and various types of structural events that can serve to direct the user to more detailed explorations at finer levels of granularity in other tools.
-    </p>
-    <app-gene-search></app-gene-search>
-    <!--
-    <h2>Use Cases</h2>
-    <p>Some use cases should go here</p>
-    -->
-    <h2>Examples</h2>
-    <ul>
-    <li>
-    <b>Legume Information System</b> query gene: <a href="/lis_context_viewer/#/search/lis/phavu.Phvul.002G085200?numNeighbors=10&numMatchedFamilies=4&numNonFamily=5&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&track_regexp=&order=distance&sources=lfo&sources=lis">phavu.Phvul.002G085200</a> 
-    <br>Common bean gene highly conserved across syntenic contexts among legumes (with inversion in soybean) and fabidae species (prupe=peach, cucsa=cucumber) from <b>Phytozome</b>
-    </li>
-    <!-- for reasons I don't have time to understand, this version of the link is not returning a view, though seemingly not producing any errors either...
-    <li>
-    Synteny with Arabidopsis thaliana <a href="/lis_context_viewer/#/search/lfo/arath.Col.AT5G07830?numNeighbors=15&numMatchedFamilies=4&numNonFamily=8&algorithm=smith&match=10&mismatch=-1&gap=-1&score=40&threshold=25&track_regexp=&order=distance&sources=lfo&sources=lis">AT5G07830</a> as query
-    </li>
-    -->
-    <li>
-    <b>Phytozome</b> Legume Federation Outgroups (non-legume) query gene: <a href="/lis_context_viewer/#/search/lfo/arath.Col.AT5G07830?sources=lfo%2Clis&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&neighbors=20&matched=4&intermediate=5&bmatched=8&bintermediate=10&bmask=10&regexp=">arath.Col.AT5G07830</a> 
-    <br>Arabidopsis thaliana synteny to self and fabidae species
-    </li>
-    <li>
-    <b>CSFLdb</b> wild chickpea query gene: <a href="/lis_context_viewer/index.html#/search/cicre/cicre.Cr_11709?neighbors=20&sources=lfo%2Clis%2Ccicre&matched=4&intermediate=5&algorithm=smith-waterman&match=10&mismatch=-1&gap=-1&score=30&threshold=25&regexp=cicre%7Ccicar%7Cmedtr%7Carath&order=distance&bmatched=20&bintermediate=10&bmask=10">cicre.Cr_11709</a> 
-    <br>synteny with cultivated chickpeas, Medicago truncatula, Arabidopsis thaliana
-    </li>
-    <li>
-    <b>Noble Alfalfa Breeder's Toolbox</b> diploidized cultivated alfalfa (CADL) query gene: <a href="/lis_context_viewer/#/search/medsa/medsa.CADL_HM342.v1_0.MSAD_306863?algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&bmatched=5&bintermediate=10&bmask=10&neighbors=20&matched=4&intermediate=5&regexp=med&sources=lis%2Cmedsa">medsa.CADL_HM342.MSAD_306863</a> 
-    <br>corresponding haplotypes from CADL assembly, synteny with Medicago truncatula
-    </li>
-    <li>
-    Homeobox-leucine zipper protein family <a href="http://legumeinfo.org/chado_phylotree/phytozome_10_2.59053124?hilite_node=arath.AT4G37790.1,arath.AT2G22800.1">Gene Tree at LIS</a>; in the tree, click on one of the highlighted Arabidopsis genes, then choose the "Find similar contexts" link to return to the LegFed Context Viewer to see synteny for the region containing the gene.
-    </li>
-    <li>
-    <a href="/lis_context_viewer/#/multi/lotja.Lj0g3v0166889%2Ccicar.Ca_05015_gene%2Cglyma.Glyma.06G088000%2Cglyma.Glyma.04G086500%2Caraip.Araip.Z4RG3%2Cvigra.Vradi05g08580%2Caraip.Araip.0T13B%2Cmedtr.Medtr3g110360%2Ccajca.C.cajan_36467_gene%2Cphavu.Phvul.009G111700%2Caradu.Aradu.M206V%2Carath.Col.AT2G25840?sources=lis%2Clfo&regexp=&neighbors=20&alpha=0.4&kappa=10&minsup=2&minsize=5">Multi-aligned view</a> of genes from a tryptophan-tRNA ligase family.
-    </li>
-    </ul>
-    <h2>Feedback and features and bugs, oh my!</h2>
-    <p>GCV is on GitHub: <a target="_blank" href="https://github.com/legumeinfo/lis_context_viewer">https://github.com/legumeinfo/lis_context_viewer</a>. Swing by, if you feel so inclined.</p>
+
+  <section class="jumbotron text-center">
+    <div class="container">
+      <h1 class="jumbotron-heading">Genome Context Viewer</h1>
+      <p class="lead text-muted">A web-app that visualizes genomic context data provided by third party services in a single, federated interface by using gene-family assignment as a unit of search and comparison.</p>
+      <p>
+        <a href="#" class="btn btn-primary my-2" (click)="scrollTo($event, '#features')">Get started</a>
+        <a href="https://academic.oup.com/bioinformatics/article/34/9/1562/4673199" target="_blank" class="btn btn-outline-primary my-2">Read the paper</a>
+        <a href="https://github.com/legumeinfo/lis_context_viewer" target="_blank" class="btn btn-secondary my-2"><span class="fa fa-github"></span> GitHub</a>
+      </p>
     </div>
+  </section>
+
+  <div class="container">
+
+    <div class="row featurette" *ngIf="dashboard.examples.length > 0">
+      <div class="col-md-12">
+        <h2 class="featurette-heading"><span class="fa fa-search"></span> Search Now!<!-- <span class="text-muted">Checkmate.</span>--></h2>
+        <p>To get started, enter the name of a gene and select the server that provides it. A genomic context will be made from the gene and the genes that flank it, then similar contexts will be searched for.</p>
+        <app-gene-search></app-gene-search>
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+
+    <div class="row">
+      <div id="tour" class="col-lg-4">
+        <h2><span class="fa fa-play"></span> Take the Tour</h2>
+        <p>Take an interactive tour and learn about each of the GCV views and the components that compose them.</p>
+        <p><a class="btn btn-secondary" href="#" role="button" (click)="startTour($event)">Begin tour &raquo;</a></p>
+      </div>
+      <div class="col-lg-4">
+        <h2><span class="fa fa-book"></span> Read the Docs</h2>
+        <p>Documentation describing GCV features and use cases in detail are available online.</p>
+        <p><a class="btn btn-secondary" href="https://github.com/legumeinfo/lis_context_viewer/wiki" target="_blank" role="button">Start reading &raquo;</a></p>
+      </div>
+      <div class="col-lg-4">
+        <h2><span class="fa fa-code"></span> Developer Zone</h2>
+        <p>GCV is a federated tool that can consume data from a variety of data providers. Learn how to setup your own GCV data services and configure the user interface.</p>
+        <p><a class="btn btn-secondary" href="https://github.com/legumeinfo/lis_context_viewer/wiki" target="_blank" role="button">View details &raquo;</a></p>
+      </div>
+    </div>
+
+    <hr id="features" class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-5 flex-shrink-1">
+        <h2 class="featurette-heading">Search View<!-- <span class="text-muted">It'll blow your mind.</span>--></h2>
+        <p class="lead">Search across multiple data providers for genomic contexts similar to your query and align the results to the query in a manner that emphasizes structural variation.</p>
+        <p class="lead">Put the results into context with chromosome-scale synteny blocks computed on-demand across data providers.</p>
+        <p class="lead">And better understand local and global strucuture with pairwise gene-loci dot plots.</p>
+      </div>
+      <div class="col-md-7 flex-shrink-1">
+        <img #searchScreenshot class="featurette-image img-fluid mx-auto" src="{{dashboard.search.img}}" alt="Search view screenshot">
+      </div>
+      <div id="container"></div>
+    </div>
+
+    <hr class="featurette-divider">
+
+    <div class="row featurette">
+      <div class="col-md-5 order-md-2">
+        <h2 class="featurette-heading">Multi View<!-- <span class="text-muted">See for yourself.</span>--></h2>
+        <p class="lead">Retrieve multiple genomic contexts from different data providers, group them based on shared gene-family content, and perform a multiple sequence alignment of each group that emphasizes structural variation.</p>
+        <p class="lead">Put the results into context with chromosome-scale synteny blocks computed on-demand across data providers and displayed in a Circos-style viewer.</p>
+      </div>
+      <div class="col-md-7 order-md-1">
+        <img #multiScreenshot class="featurette-image img-fluid mx-auto" src="{{dashboard.multi.img}}" alt="Multi view screenshot">
+      </div>
+    </div>
+
+    <hr class="featurette-divider" *ngIf="dashboard.examples.length > 0">
+
+    <div class="row featurette" *ngIf="dashboard.examples.length > 0">
+      <div class="col-md-12">
+        <h2 class="featurette-heading">{{brand.name}} Examples<!-- <span class="text-muted">Checkmate.</span>--></h2>
+        <ul>
+          <li *ngFor="let example of dashboard.examples" [innerHTML]="example"></li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="featurette-divider">
+
+  </div>
+
+  <footer class="container">
+    <p class="float-right"><a href="#" (click)="scrollTo($event, '#top')">Back to top</a></p>
+    <p><span class="fa fa-copyright"></span> {{ copyrightYear }} <a href="https://legumeinfo.org/" target="_blank">Legume Information System</a> &middot; <span class="fa fa-osi"></span>&nbsp;<a href="https://github.com/legumeinfo/lis_context_viewer/blob/master/LICENSE" target="_blank">License</a></p>
+  </footer>
 </main>

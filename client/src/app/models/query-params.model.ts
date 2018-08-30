@@ -1,7 +1,6 @@
 // Angular
 import { AbstractControl, Validators } from "@angular/forms";
-import { Regex } from "../constants/regex";
-
+import { Regex } from "../constants";
 // App
 import { AppConfig } from "../app.config";
 
@@ -10,8 +9,7 @@ export class QueryParams {
 
   constructor(
     public neighbors: number = 10,
-    // TODO: update to be first source from config
-    public sources: string[] = ["lis"],  // Server IDs
+    public sources: string[] = AppConfig.SERVERS.map((s) => s.id),
     public matched: number = 4,
     public intermediate: number = 5,
   ) { }

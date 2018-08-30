@@ -1,5 +1,5 @@
 // Angular
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule } from "@angular/common/http";
 import { APP_INITIALIZER, NgModule } from "@angular/core";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { BrowserModule } from "@angular/platform-browser";
@@ -18,9 +18,8 @@ import * as fromGuards from "./guards";
 import { RouterStateSerializer, StoreRouterConnectingModule } from "@ngrx/router-store";
 import { EffectsModule } from "@ngrx/effects";
 import { StoreModule } from "@ngrx/store";
-import { metaReducers, reducers } from "./reducers";
-import { effects } from "./effects";
-import { CustomRouterStateSerializer } from "./utils/custom-router-state-serializer.util";
+import { metaReducers, reducers, effects } from "./store";
+import { CustomRouterStateSerializer } from "./utils";
 
 @NgModule({
   bootstrap: [ fromComponents.AppComponent ],

@@ -1,0 +1,337 @@
+{
+  "brand": {
+    "favicon": "/sites/default/files/siteimages/LegFedSiteLogo.png",
+    "url": "/",
+    "img": "/sites/default/files/siteimages/LegFedSiteLogo.png",
+    "name": "LegFed - Legume Federation",
+    "slogan": "iA consortium of scientists working to support robust agriculture for a substantially legume-fed world."
+  },
+  "dashboard": {
+    "search": {
+      "caption": "A Search view using a genomic context from Phaseolus vulgaris (common bean) Chromosome II as the query. Note, the result genomic context from Glycine max (soybean) Chromosome I contains an inversion. Also, the Global dot plot of Arachis hypogaea (peanut) reveals an inversion not present in the Micro-Synteny viewer. Lastly, the Macro-Synteny viewer reveals that some of the result genomic contexts belong to larger syntenic structures."
+    },
+    "multi": {
+      "caption": "A Multi view for genomic contexts derived from the same gene family representing 11 chromosomes from 9 different species, as illustrated by the Macro-Synteny Circos-style viewer. Note, the genomic context from Glycine max (soybean) Chromosome I contains an inversion. Also, the highlighted portion of each chromosome's arc in the Macro-Synteny viewer reveals that many of the genomic contexts belong to larger syntenic structures."
+    },
+    "examples": [
+      "<b>Legume Information System</b> query gene: <a href='/lis_context_viewer/search/lis/phavu.Phvul.002G085200?numNeighbors=10&numMatchedFamilies=4&numNonFamily=5&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&track_regexp=&order=distance&sources=lfo&sources=lis'>phavu.Phvul.002G085200</a><br>Common bean gene highly conserved across syntenic contexts among legumes (with inversion in soybean) and fabidae species (prupe=peach, cucsa=cucumber) from <b>Phytozome</b>",
+      "<b>Phytozome</b> Legume Federation Outgroups (non-legume) query gene: <a href='/lis_context_viewer/#/search/lfo/arath.Col.AT5G07830?sources=lfo%2Clis&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&neighbors=20&matched=4&intermediate=5&bmatched=8&bintermediate=10&bmask=10&regexp='>arath.Col.AT5G07830</a> <br>Arabidopsis thaliana synteny to self and fabidae species",
+      "<b>CSFLdb</b> wild chickpea query gene: <a href='/lis_context_viewer/index.html#/search/cicre/cicre.Cr_11709?neighbors=20&sources=lfo%2Clis%2Ccicre&matched=4&intermediate=5&algorithm=smith-waterman&match=10&mismatch=-1&gap=-1&score=30&threshold=25&regexp=cicre%7Ccicar%7Cmedtr%7Carath&order=distance&bmatched=20&bintermediate=10&bmask=10'>cicre.Cr_11709</a><br>synteny with cultivated chickpeas, Medicago truncatula, Arabidopsis thaliana",
+      "<b>Noble Alfalfa Breeder's Toolbox</b> diploidized cultivated alfalfa (CADL) query gene: <a href='/lis_context_viewer/#/search/medsa/medsa.CADL_HM342.v1_0.MSAD_306863?algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&bmatched=5&bintermediate=10&bmask=10&neighbors=20&matched=4&intermediate=5&regexp=med&sources=lis%2Cmedsa'>medsa.CADL_HM342.MSAD_306863</a> <br>corresponding haplotypes from CADL assembly, synteny with Medicago truncatula",
+      "\"Search\" (<b>reference-aligned</b>) view of <a href='/search/lis/medtr.Medtr3g110360?neighbors=8&sources=lis&regexp=&matched=4&intermediate=5&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance'>Medicago truncatula gene medtr.Medtr3g110360</a> (try the Dotplots tab on this too)",
+      "\"Multi\" (<b>within-cluster multiple alignment</b>) view of <a href='/multi/lotja.Lj0g3v0166889,cicar.Ca_05015_gene,glyma.Glyma.06G088000,glyma.Glyma.04G086500,araip.Araip.Z4RG3,vigra.Vradi05g08580,araip.Araip.0T13B,medtr.Medtr3g110360,cajca.C.cajan_36467_gene,phavu.Phvul.009G111700,aradu.Aradu.M206V?neighbors=8&sources=lis&regexp='>a set of genes from the tryptophan-tRNA ligase family</a>."
+    ]
+  },
+  "miscellaneous": {
+    "geneSearchPlaceholder": "e.g. phavu.Phvul.002G100400"
+  },
+  "tours": [
+    {"script": "default.js", "name": "defaultTour"}
+  ],
+  "servers": [
+      {
+        "id": "lis",
+        "name": "Legume Information System",
+        "macroColors": {
+          "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+          "functionName": "taxonChroma.get"
+        },
+        "microMulti": {
+          "type": "POST",
+          "url": "/gcv_lis_phytozome/server/services/v1/micro-synteny-basic/"
+        },
+        "microSearch": {
+          "type": "POST",
+          "url": "/gcv_lis_phytozome/server/services/v1/micro-synteny-search/"
+        },
+        "microQuery": {
+          "type": "POST",
+          "url": "/gcv_lis_phytozome/server/services/v1/gene-to-query-track/"
+        },
+        "macro": {
+          "type": "POST",
+          "url": "/gcv_lis_phytozome/server/services/v1_1/macro-synteny/"
+        },
+        "geneLinks": {
+          "type": "GET",
+          "url": "https://legumeinfo.org/gene_links/"
+        },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+        "plotGlobal": {
+          "type": "POST",
+          "url": "/gcv_lis_phytozome/server/services/v1/global-plots/"
+        },
+        "nearestGene": {
+          "type": "POST",
+          "url": "/gcv_lis_phytozome/server/services/v1/nearest-gene/"
+        },
+        "chromosome": {
+          "type": "POST",
+          "url": "/gcv_lis_phytozome/server/services/v1_1/chromosome/"
+        }
+      },
+      {
+        "id": "lfo",
+        "name": "Legume Federation Outgroups",
+        "macroColors": {
+          "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+          "functionName": "taxonChroma.get"
+        },
+        "microMulti": {
+          "type": "POST",
+          "url": "/lis_context_server/services/v1/micro-synteny-basic/"
+        },
+        "microSearch": {
+          "type": "POST",
+          "url": "/lis_context_server/services/v1/micro-synteny-search/"
+        },
+        "microQuery": {
+          "type": "POST",
+          "url": "/lis_context_server/services/v1/gene-to-query-track/"
+        },
+        "macro": {
+          "type": "POST",
+          "url": "/lis_context_server/services/v1_1/macro-synteny/"
+        },
+        "geneLinks": {
+          "type": "GET",
+          "url": "https://legumeinfo.org/gene_links/"
+        },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+        "plotGlobal": {
+          "type": "POST",
+          "url": "/lis_context_server/services/v1/global-plots/"
+        },
+        "nearestGene": {
+          "type": "POST",
+          "url": "/lis_context_server/services/v1/nearest-gene/"
+        },
+        "chromosome": {
+          "type": "POST",
+          "url": "/lis_context_server/services/v1_1/chromosome/"
+        }
+      },
+      {
+        "id": "cicre",
+        "name": "Wild Chickpea (Cicer reticulatum)",
+        "macroColors": {
+          "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+          "functionName": "taxonChroma.get"
+        },
+        "microMulti": {
+          "type": "POST",
+          "url": "/cicre_context_server/services/v1/micro-synteny-basic/"
+        },
+        "microSearch": {
+          "type": "POST",
+          "url": "/cicre_context_server/services/v1/micro-synteny-search/"
+        },
+        "microQuery": {
+          "type": "POST",
+          "url": "/cicre_context_server/services/v1/gene-to-query-track/"
+        },
+        "macro": {
+          "type": "POST",
+          "url": "/cicre_context_server/services/v1_1/macro-synteny/"
+        },
+        "geneLinks": {
+          "type": "GET",
+          "url": "/cicre_context_server/services/v1/gene-links/"
+        },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+        "plotGlobal": {
+          "type": "POST",
+          "url": "/cicre_context_server/services/v1/global-plots/"
+        },
+        "nearestGene": {
+          "type": "POST",
+          "url": "/cicre_context_server/services/v1/nearest-gene/"
+        },
+        "chromosome": {
+          "type": "POST",
+          "url": "/cicre_context_server/services/v1_1/chromosome/"
+        }
+      },
+      {
+        "id": "medsa",
+        "name": "2x cultivated Alfalfa (CADL)",
+        "macroColors": {
+          "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+          "functionName": "taxonChroma.get"
+        },
+        "microMulti": {
+          "type": "POST",
+          "url": "/cadl_context_server/services/v1/micro-synteny-basic/"
+        },
+        "microSearch": {
+          "type": "POST",
+          "url": "/cadl_context_server/services/v1/micro-synteny-search/"
+        },
+        "microQuery": {
+          "type": "POST",
+          "url": "/cadl_context_server/services/v1/gene-to-query-track/"
+        },
+        "macro": {
+          "type": "POST",
+          "url": "/cadl_context_server/services/v1_1/macro-synteny/"
+        },
+        "geneLinks": {
+          "type": "GET",
+          "url": "/cadl_context_server/services/v1/gene-links/"
+        },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+        "plotGlobal": {
+          "type": "POST",
+          "url": "/cadl_context_server/services/v1/global-plots/"
+        },
+        "nearestGene": {
+          "type": "POST",
+          "url": "/cadl_context_server/services/v1/nearest-gene/"
+        },
+        "chromosome": {
+          "type": "POST",
+          "url": "/cadl_context_server/services/v1_1/chromosome/"
+        }
+      },
+      {
+        "id": "phavu",
+        "name": "Phaseolus vulgaris special",
+        "macroColors": {
+          "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+          "functionName": "taxonChroma.get"
+        },
+        "microMulti": {
+          "type": "POST",
+          "url": "/phavu_context_server/services/v1/micro-synteny-basic/"
+        },
+        "microSearch": {
+          "type": "POST",
+          "url": "/phavu_context_server/services/v1/micro-synteny-search/"
+        },
+        "microQuery": {
+          "type": "POST",
+          "url": "/phavu_context_server/services/v1/gene-to-query-track/"
+        },
+        "macro": {
+          "type": "POST",
+          "url": "/phavu_context_server/services/v1_1/macro-synteny/"
+        },
+        "geneLinks": {
+          "type": "GET",
+          "url": "https://legumeinfo.org/gene_links/"
+        },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+        "plotGlobal": {
+          "type": "POST",
+          "url": "/phavu_context_server/services/v1/global-plots/"
+        },
+        "nearestGene": {
+          "type": "POST",
+          "url": "/phavu_context_server/services/v1/nearest-gene/"
+        },
+        "chromosome": {
+          "type": "POST",
+          "url": "/phavu_context_server/services/v1_1/chromosome/"
+        }
+      },
+      {
+        "id": "glyma",
+        "name": "Glycine max gnm1.ann1",
+        "macroColors": {
+          "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+          "functionName": "taxonChroma.get"
+        },
+        "microMulti": {
+          "type": "POST",
+          "url": "/glyma_context_server/services/v1/micro-synteny-basic/"
+        },
+        "microSearch": {
+          "type": "POST",
+          "url": "/glyma_context_server/services/v1/micro-synteny-search/"
+        },
+        "microQuery": {
+          "type": "POST",
+          "url": "/glyma_context_server/services/v1/gene-to-query-track/"
+        },
+        "macro": {
+          "type": "POST",
+          "url": "/glyma_context_server/services/v1_1/macro-synteny/"
+        },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+        "plotGlobal": {
+          "type": "POST",
+          "url": "/glyma_context_server/services/v1/global-plots/"
+        },
+        "nearestGene": {
+          "type": "POST",
+          "url": "/glyma_context_server/services/v1/nearest-gene/"
+        },
+        "chromosome": {
+          "type": "POST",
+          "url": "/glyma_context_server/services/v1_1/chromosome/"
+        }
+      },
+      {
+        "id": "mt_hapmap",
+        "name": "Medicago truncatula HapMap",
+        "macroColors": {
+          "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+          "functionName": "taxonChroma.get"
+        },
+        "microMulti": {
+          "type": "POST",
+          "url": "/mthapmap_context_server/services/v1/micro-synteny-basic/"
+        },
+        "microSearch": {
+          "type": "POST",
+          "url": "/mthapmap_context_server/services/v1/micro-synteny-search/"
+        },
+        "microQuery": {
+          "type": "POST",
+          "url": "/mthapmap_context_server/services/v1/gene-to-query-track/"
+        },
+        "macro": {
+          "type": "POST",
+          "url": "/mthapmap_context_server/services/v1_1/macro-synteny/"
+        },
+        "geneLinks": {
+          "type": "GET",
+          "url": "https://legumeinfo.org/gene_links/"
+        },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+        "plotGlobal": {
+          "type": "POST",
+          "url": "/mthapmap_context_server/services/v1/global-plots/"
+        },
+        "nearestGene": {
+          "type": "POST",
+          "url": "/mthapmap_context_server/services/v1/nearest-gene/"
+        },
+        "chromosome": {
+          "type": "POST",
+          "url": "/mthapmap_context_server/services/v1_1/chromosome/"
+        }
+      }
+]
+}

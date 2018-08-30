@@ -1,16 +1,15 @@
 // Angular
 import { Injectable } from "@angular/core";
-import { Observable } from "rxjs/Observable";
+import { Observable } from "rxjs";
 // store
 import { Store } from "@ngrx/store";
-import * as routerActions from "../actions/router.actions";
-import * as fromRoot from "../reducers";
-import * as fromClusteredMicroTracks from "../reducers/clustered-micro-tracks.store";
-import * as fromRouter from "../reducers/router.store";
+import * as routerActions from "../store/actions/router.actions";
+import * as fromRoot from "../store/reducers";
+import * as fromClusteredMicroTracks from "../store/reducers/clustered-micro-tracks.store";
+import * as fromRouter from "../store/reducers/router.store";
 // app
 import { GCV } from "../../assets/js/gcv";
-import { ClusteringParams } from "../models/clustering-params.model";
-import { MicroTracks } from "../models/micro-tracks.model";
+import { ClusteringParams, MicroTracks } from "../models";
 
 @Injectable()
 export class ClusteringService {

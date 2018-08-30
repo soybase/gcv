@@ -15,9 +15,9 @@
     },
     "examples": [
       "<b>Legume Information System</b> query gene: <a href='/lis_context_viewer/search/lis/phavu.Phvul.002G085200?numNeighbors=10&numMatchedFamilies=4&numNonFamily=5&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&track_regexp=&order=distance&sources=lfo&sources=lis'>phavu.Phvul.002G085200</a><br>Common bean gene highly conserved across syntenic contexts among legumes (with inversion in soybean) and fabidae species (prupe=peach, cucsa=cucumber) from <b>Phytozome</b>",
-      "<b>Phytozome</b> Legume Federation Outgroups (non-legume) query gene: <a href='/lis_context_viewer/#/search/lfo/arath.Col.AT5G07830?sources=lfo%2Clis&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&neighbors=20&matched=4&intermediate=5&bmatched=8&bintermediate=10&bmask=10&regexp='>arath.Col.AT5G07830</a> <br>Arabidopsis thaliana synteny to self and fabidae species",
-      "<b>CSFLdb</b> wild chickpea query gene: <a href='/lis_context_viewer/index.html#/search/cicre/cicre.Cr_11709?neighbors=20&sources=lfo%2Clis%2Ccicre&matched=4&intermediate=5&algorithm=smith-waterman&match=10&mismatch=-1&gap=-1&score=30&threshold=25&regexp=cicre%7Ccicar%7Cmedtr%7Carath&order=distance&bmatched=20&bintermediate=10&bmask=10'>cicre.Cr_11709</a><br>synteny with cultivated chickpeas, Medicago truncatula, Arabidopsis thaliana",
-      "<b>Noble Alfalfa Breeder's Toolbox</b> diploidized cultivated alfalfa (CADL) query gene: <a href='/lis_context_viewer/#/search/medsa/medsa.CADL_HM342.v1_0.MSAD_306863?algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&bmatched=5&bintermediate=10&bmask=10&neighbors=20&matched=4&intermediate=5&regexp=med&sources=lis%2Cmedsa'>medsa.CADL_HM342.MSAD_306863</a> <br>corresponding haplotypes from CADL assembly, synteny with Medicago truncatula",
+      "<b>Phytozome</b> Legume Federation Outgroups (non-legume) query gene: <a href='/lis_context_viewer/search/lfo/arath.Col.AT5G07830?sources=lfo%2Clis&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&neighbors=20&matched=4&intermediate=5&bmatched=8&bintermediate=10&bmask=10&regexp='>arath.Col.AT5G07830</a> <br>Arabidopsis thaliana synteny to self and fabidae species",
+      "<b>CSFLdb</b> wild chickpea query gene: <a href='/lis_context_viewer/search/cicre/cicre.Cr_11709?neighbors=20&sources=lfo%2Clis%2Ccicre&matched=4&intermediate=5&algorithm=smith-waterman&match=10&mismatch=-1&gap=-1&score=30&threshold=25&regexp=cicre%7Ccicar%7Cmedtr%7Carath&order=distance&bmatched=20&bintermediate=10&bmask=10'>cicre.Cr_11709</a><br>synteny with cultivated chickpeas, Medicago truncatula, Arabidopsis thaliana",
+      "<b>Noble Alfalfa Breeder's Toolbox</b> diploidized cultivated alfalfa (CADL) query gene: <a href='/lis_context_viewer/search/medsa/medsa.CADL_HM342.v1_0.MSAD_306863?algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance&bmatched=5&bintermediate=10&bmask=10&neighbors=20&matched=4&intermediate=5&regexp=med&sources=lis%2Cmedsa'>medsa.CADL_HM342.MSAD_306863</a> <br>corresponding haplotypes from CADL assembly, synteny with Medicago truncatula",
       "\"Search\" (<b>reference-aligned</b>) view of <a href='/search/lis/medtr.Medtr3g110360?neighbors=8&sources=lis&regexp=&matched=4&intermediate=5&algorithm=repeat&match=10&mismatch=-1&gap=-1&score=30&threshold=25&order=distance'>Medicago truncatula gene medtr.Medtr3g110360</a> (try the Dotplots tab on this too)",
       "\"Multi\" (<b>within-cluster multiple alignment</b>) view of <a href='/multi/lotja.Lj0g3v0166889,cicar.Ca_05015_gene,glyma.Glyma.06G088000,glyma.Glyma.04G086500,araip.Araip.Z4RG3,vigra.Vradi05g08580,araip.Araip.0T13B,medtr.Medtr3g110360,cajca.C.cajan_36467_gene,phavu.Phvul.009G111700,aradu.Aradu.M206V?neighbors=8&sources=lis&regexp='>a set of genes from the tryptophan-tRNA ligase family</a>."
     ]
@@ -38,19 +38,19 @@
         },
         "microMulti": {
           "type": "POST",
-          "url": "/gcv_lis_phytozome/server/services/v1/micro-synteny-basic/"
+          "url": "/gcv_lis_phytozome/services/v1/micro-synteny-basic/"
         },
         "microSearch": {
           "type": "POST",
-          "url": "/gcv_lis_phytozome/server/services/v1/micro-synteny-search/"
+          "url": "/gcv_lis_phytozome/services/v1/micro-synteny-search/"
         },
         "microQuery": {
           "type": "POST",
-          "url": "/gcv_lis_phytozome/server/services/v1/gene-to-query-track/"
+          "url": "/gcv_lis_phytozome/services/v1/gene-to-query-track/"
         },
         "macro": {
           "type": "POST",
-          "url": "/gcv_lis_phytozome/server/services/v1_1/macro-synteny/"
+          "url": "/gcv_lis_phytozome/services/v1_1/macro-synteny/"
         },
         "geneLinks": {
           "type": "GET",
@@ -62,15 +62,15 @@
       },
         "plotGlobal": {
           "type": "POST",
-          "url": "/gcv_lis_phytozome/server/services/v1/global-plots/"
+          "url": "/gcv_lis_phytozome/services/v1/global-plots/"
         },
         "nearestGene": {
           "type": "POST",
-          "url": "/gcv_lis_phytozome/server/services/v1/nearest-gene/"
+          "url": "/gcv_lis_phytozome/services/v1/nearest-gene/"
         },
         "chromosome": {
           "type": "POST",
-          "url": "/gcv_lis_phytozome/server/services/v1_1/chromosome/"
+          "url": "/gcv_lis_phytozome/services/v1_1/chromosome/"
         }
       },
       {

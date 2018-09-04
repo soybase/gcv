@@ -4,7 +4,7 @@
     "url": "/",
     "img": "/sites/default/files/siteimages/LegFedSiteLogo.png",
     "name": "LegFed - Legume Federation",
-    "slogan": "iA consortium of scientists working to support robust agriculture for a substantially legume-fed world."
+    "slogan": "A consortium of scientists working to support robust agriculture for a substantially legume-fed world."
   },
   "dashboard": {
     "search": {
@@ -100,10 +100,6 @@
           "type": "GET",
           "url": "https://legumeinfo.org/gene_links/"
         },
-      "familyTreeLink": {
-        "type": "GET",
-        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
-      },
         "plotGlobal": {
           "type": "POST",
           "url": "/lis_context_server/services/v1/global-plots/"
@@ -144,10 +140,6 @@
           "type": "GET",
           "url": "/cicre_context_server/services/v1/gene-links/"
         },
-      "familyTreeLink": {
-        "type": "GET",
-        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
-      },
         "plotGlobal": {
           "type": "POST",
           "url": "/cicre_context_server/services/v1/global-plots/"
@@ -188,10 +180,6 @@
           "type": "GET",
           "url": "/cadl_context_server/services/v1/gene-links/"
         },
-      "familyTreeLink": {
-        "type": "GET",
-        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
-      },
         "plotGlobal": {
           "type": "POST",
           "url": "/cadl_context_server/services/v1/global-plots/"
@@ -232,10 +220,6 @@
           "type": "GET",
           "url": "https://legumeinfo.org/gene_links/"
         },
-      "familyTreeLink": {
-        "type": "GET",
-        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
-      },
         "plotGlobal": {
           "type": "POST",
           "url": "/phavu_context_server/services/v1/global-plots/"
@@ -272,10 +256,6 @@
           "type": "POST",
           "url": "/glyma_context_server/services/v1_1/macro-synteny/"
         },
-      "familyTreeLink": {
-        "type": "GET",
-        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
-      },
         "plotGlobal": {
           "type": "POST",
           "url": "/glyma_context_server/services/v1/global-plots/"
@@ -316,10 +296,6 @@
           "type": "GET",
           "url": "https://legumeinfo.org/gene_links/"
         },
-      "familyTreeLink": {
-        "type": "GET",
-        "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
-      },
         "plotGlobal": {
           "type": "POST",
           "url": "/mthapmap_context_server/services/v1/global-plots/"

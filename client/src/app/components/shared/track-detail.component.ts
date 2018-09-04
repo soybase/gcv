@@ -11,9 +11,24 @@ import { Gene, Group, Server } from "../../models";
     <h4>{{track.genus[0]}}.{{track.species}} - {{track.chromosome_name}}</h4>
     <p><a [routerLink]="['/search', track.source, focus]" queryParamsHandling="merge">Search for similar contexts</a></p>
     <!-- FIXME: AWFUL HACKS FOLLOW -->
-    <p *ngIf="track.genus != 'Arabidopsis' && track.genus != 'Cucumis' && track.genus != 'Fragaria' && track.genus != 'Prunus'"><a href="https://intermine.legumefederation.org/legumemine/bag.do?subtab=upload&type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
-    <p *ngIf="track.genus === 'Arabidopsis'"><a href="https://apps.araport.org/thalemine/bag.do?subtab=upload&type=Gene&text={{geneListFormatted}}">Create gene list in ThaleMine</a></p>
-    <p *ngIf="track.genus === 'Cucumis' || track.genus === 'Fragaria' || track.genus === 'Prunus'"><a href="https://phytozome.jgi.doe.gov/phytomine/bag.do?subtab=upload&type=Gene&text={{geneListFormatted}}">Create gene list in PhytoMine</a></p>
+   <form *ngIf="track.genus != 'Arabidopsis' && track.genus != 'Cucumis' && track.genus != 'Fragaria' && track.genus != 'Prunus'" id="legumemine-form" action='https://mines.legumeinfo.org/legumemine/bag.do' method="POST" target="_blank">
+         <input type="hidden" name="type" value="Gene"/>
+         <input type="hidden" name="subtab" value="upload"/>
+         <input type="hidden" name="text" value="{{geneListFormatted}}"/>
+         <button onClick="document.getElementById('legumemine-form').submit();" type="submit">Create gene list in LegumeMine</button>
+    </form>
+   <form *ngIf="track.genus === 'Arabidopsis'" id="thalemine-form" action='https://apps.araport.org/thalemine/bag.do' method="POST" target="_blank">
+         <input type="hidden" name="type" value="Gene"/>
+         <input type="hidden" name="subtab" value="upload"/>
+         <input type="hidden" name="text" value="{{geneListFormatted}}"/>
+         <button onClick="document.getElementById('thalemine-form').submit();" type="submit">Create gene list in ThaleMine</button>
+    </form>
+   <form *ngIf="track.genus === 'Cucumis' || track.genus === 'Fragaria' || track.genus === 'Prunus'" id="phytomine-form" action='https://phytozome.jgi.doe.gov/phytomine/bag.do' method="POST" target="_blank">
+         <input type="hidden" name="type" value="Gene"/>
+         <input type="hidden" name="subtab" value="upload"/>
+         <input type="hidden" name="text" value="{{geneListFormatted}}"/>
+         <button onClick="document.getElementById('phytomine-form').submit();" type="submit">Create gene list in PhytoMine</button>
+    </form>
     <p>Genes:</p>
     <ul>
       <li *ngFor="let gene of track.genes">
@@ -41,7 +56,7 @@ export class TrackDetailComponent implements OnChanges {
     if (this.track !== undefined) {
       const idx = Math.floor(this.track.genes.length / 2);
       this.focus = this.track.genes[idx].name;
-      this.geneListFormatted = this.track.genes.map(x => x.name).join('%0A');
+      this.geneListFormatted = this.track.genes.map(x => x.name).join('\n');
       //ANOTHER TERRIBLE HACK!
       this.geneListFormatted = this.geneListFormatted.replace(/arath.Col./g,'')
     }

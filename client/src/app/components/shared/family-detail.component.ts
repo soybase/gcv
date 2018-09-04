@@ -11,7 +11,12 @@ import { Family, Gene, MicroTracks, Server } from "../../models";
   template: `
     <h4>{{family.name}}</h4>
     <p><a [routerLink]="['/multi', geneList]" queryParamsHandling="merge">View genes in multi-alignment view</a></p>
-    <p ><a href="https://intermine.legumefederation.org/legumemine/bag.do?subtab=upload&type=Gene&text={{geneListFormatted}}">Create gene list in LegumeMine</a></p>
+   <form id="legumemine-form" action='https://mines.legumeinfo.org/legumemine/bag.do' method="POST" target="_blank">
+         <input type="hidden" name="type" value="Gene"/>
+         <input type="hidden" name="subtab" value="upload"/>
+         <input type="hidden" name="text" value="{{geneListFormatted}}"/>
+         <button onClick="document.getElementById('legumemine-form').submit();" type="submit">Create gene list in LegumeMine</button>
+    </form>
     <p>Phylograms: <span *ngIf="familyTreeLinks.length === 0">none</span></p>
     <ul *ngIf="familyTreeLinks.length > 0">
       <li *ngFor="let link of familyTreeLinks">
@@ -55,7 +60,7 @@ export class FamilyDetailComponent implements OnChanges {
         return g.family;
       })).size === 1;
       this.geneList = this.genes.map((x) => x.name).join(",");
-      this.geneListFormatted = this.genes.map(x => x.name).join('%0A');
+      this.geneListFormatted = this.genes.map(x => x.name).join('\n');
       this.familyTreeLinks = [];
 
       if (linkablePhylo) {

@@ -1,15 +1,19 @@
-import { Component, OnInit } from "@angular/core";
+// Angular
+import { Component, AfterViewInit } from "@angular/core";
 import * as $ from "jquery";
+// App
+import { AppConfig } from "../../app.config";
 
 @Component({
-  moduleId: module.id.toString(),
   selector: "header",
-  styles: [ require("./header.component.scss") ],
-  template: require("./header.component.html"),
+  styleUrls: [ "./header.component.scss" ],
+  templateUrl: "./header.component.html",
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements AfterViewInit {
 
-  ngOnInit(): void {
+  brand = AppConfig.BRAND;
+
+  ngAfterViewInit(): void {
     this.toggleBrand();
   }
 

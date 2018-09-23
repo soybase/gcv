@@ -4,18 +4,14 @@ import { FormBuilder, FormGroup } from "@angular/forms";
 
 // App
 import { AppConfig } from "../../app.config";
-import { BlockParams } from "../../models/block-params.model";
-import { ClusteringParams } from "../../models/clustering-params.model";
-import { QueryParams } from "../../models/query-params.model";
-import { ClusteringService } from "../../services/clustering.service";
-import { MacroTracksService } from "../../services/macro-tracks.service";
-import { MicroTracksService } from "../../services/micro-tracks.service";
+import { BlockParams, ClusteringParams, QueryParams } from "../../models";
+import { ClusteringService, MacroTracksService, MicroTracksService } from "../../services";
 
 @Component({
   moduleId: module.id.toString(),
   selector: "multi-params",
-  styles: [ require("./multi-params.component.scss") ],
-  template: require("./multi-params.component.html"),
+  styleUrls: [ "./multi-params.component.scss" ],
+  templateUrl: "./multi-params.component.html",
 })
 export class MultiParamsComponent implements OnInit {
   // IO
@@ -23,7 +19,9 @@ export class MultiParamsComponent implements OnInit {
   @Output() valid   = new EventEmitter();
 
   // UI
-  help = false;
+  blockHelp = false;
+  queryHelp = false;
+  clusteringHelp = false;
 
   // form groups
   blockGroup: FormGroup;

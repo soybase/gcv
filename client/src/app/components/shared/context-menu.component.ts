@@ -3,10 +3,9 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter,
   Input, Output, ViewChild } from "@angular/core";
 
 @Component({
-  moduleId: module.id.toString(),
   selector: "context-menu",
-  styles: [ require("./context-menu.component.scss") ],
-  template: require("./context-menu.component.html"),
+  styleUrls: [ "./context-menu.component.scss" ],
+  templateUrl: "./context-menu.component.html",
 })
 export class ContextMenuComponent implements AfterViewInit {
   @Input() title: string;
@@ -45,7 +44,7 @@ export class ContextMenuComponent implements AfterViewInit {
 
   private _hasContent(children: any): any {
     for (const c of children) {
-      if (c.className !== "native" && c.className !== "divider") {
+      if (!c.className.includes("native") && c.className !== "dropdown-divider") {
         return true;
       }
     }

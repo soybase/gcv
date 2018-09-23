@@ -2,7 +2,7 @@ export const GET = "GET";
 export const POST = "POST";
 
 export class Request {
-  type: string;  // GET or POST
+  type: "GET" | "POST";
   url: string;
 }
 
@@ -14,6 +14,7 @@ export class Server {
   microQuery: Request;
   macro: Request;
   geneLinks: Request;
+  familyTreeLink: Request;
   plotGlobal: Request;
   nearestGene: Request;
   chromosome: Request;

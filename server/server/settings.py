@@ -110,8 +110,7 @@ DATABASES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        #'NAME': 'context_viewer_chado',
-        'NAME': 'chado_legfed',
+        'NAME': 'gcv_lis_phytozome',
         'USER': 'www',
         'PASSWORD': '',
         'HOST': '',

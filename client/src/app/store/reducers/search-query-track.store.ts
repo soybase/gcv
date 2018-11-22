@@ -56,7 +56,7 @@ export const getSearchQueryChromosome = createSelector(
     if (track === undefined) {
       return undefined;
     }
-    return track.chromosome_name;
+    return track.chromosome_id;
   },
 );
 

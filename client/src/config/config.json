@@ -34,20 +34,20 @@
         "functionName": "taxonChroma.get"
       },
       "microMulti": {
-        "type": "POST",
-        "url": "http://localhost:8000/services/v1/micro-synteny-basic/"
+        "type": "GET",
+        "url": "http://localhost:1234/micro/genes-to-tracks"
       },
       "microSearch": {
-        "type": "POST",
-        "url": "http://localhost:8000/services/v1/micro-synteny-search/"
+        "type": "GET",
+        "url": "http://localhost:1234/micro/find-similar-tracks"
       },
       "microQuery": {
-        "type": "POST",
-        "url": "http://localhost:8000/services/v1/gene-to-query-track/"
+        "type": "GET",
+        "url": "http://localhost:1234/micro/genes-to-tracks"
       },
       "macro": {
         "type": "POST",
-        "url": "http://localhost:8000/services/v1_1/macro-synteny/"
+        "url": "http://localhost:1234/macro/compute-syntenic-blocks"
       },
       "geneLinks": {
         "type": "GET",
@@ -58,16 +58,16 @@
         "url": "http://legumeinfo.org/chado_gene_phylotree_v2?family="
       },
       "plotGlobal": {
-        "type": "POST",
-        "url": "http://localhost:8000/services/v1/global-plots/"
+        "type": "GET",
+        "url": "http://localhost:1234/macro/get-homologous-genes"
       },
       "nearestGene": {
         "type": "POST",
         "url": "http://localhost:8000/services/v1/nearest-gene/"
       },
       "chromosome": {
-        "type": "POST",
-        "url": "http://localhost:8000/services/v1_1/chromosome/"
+        "type": "GET",
+        "url": "http://localhost:1234/macro/get-chromosome"
       }
     }
   ]

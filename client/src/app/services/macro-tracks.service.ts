@@ -70,10 +70,10 @@ export class MacroTracksService extends HttpService {
     targets: string[] = [],
   ): Observable<MacroTrack[]> {
     const body = {
-      families: chromosome.families,
-      intermediate: blockParams.bintermediate,
-      mask: blockParams.bmask,
-      matched: blockParams.bmatched,
+      chromosome: chromosome.families,
+      maxinsert: blockParams.bintermediate,
+      familymask: blockParams.bmask,
+      minmatched: blockParams.bmatched,
       targets,
     };
     return this._makeRequest<MacroTrack[]>(serverID, "macro", body).pipe(

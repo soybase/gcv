@@ -61,8 +61,8 @@ export class PlotsService extends HttpService {
 
   getGlobalFromLocal(reference: Group, local: Group): Observable<Group> {
     const body = {
-      chromosome: local.chromosome_name,
-      query: reference.genes.map((g) => g.family),
+      chromosome: local.chromosome_id,
+      families: reference.genes.map((g) => g.family).join(","),
     };
     return this._makeRequest<Gene[]>(local.source, "plotGlobal", body).pipe(
       map((genes) => {

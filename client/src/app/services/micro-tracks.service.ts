@@ -2,7 +2,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable, combineLatest, merge, onErrorResumeNext, throwError } from "rxjs";
-import { catchError, filter, map, take } from "rxjs/operators";
+import { catchError, filter, map, take, tap } from "rxjs/operators";
 // store
 import { Store } from "@ngrx/store";
 import * as routerActions from "../store/actions/router.actions";
@@ -61,9 +61,18 @@ export class MicroTracksService extends HttpService {
 
   // fetches a query track for the given gene from the given source
   getQueryTrack(gene: string, neighbors: number, serverID: string): Observable<Group> {
-    const body = {gene, neighbors: String(neighbors)};
-    return this._makeRequest<Group>(serverID, "microQuery", body).pipe(
-      map((track) => {
+    const body = {genes: [gene], neighbors: String(neighbors)};
+    const options = {
+      postProcessor: (tracks) => {
+        if (tracks.groups.length === 0) {
+          throw new Error(`Gene "${gene}" not found on "${serverID}"`);
+        }
+        return tracks;
+      }
+    }
+    return this._makeRequest<MicroTracks>(serverID, "microQuery", body, options).pipe(
+      map((tracks) => {
+        let track = tracks.groups[0];
         this._parseTrack(serverID, track);
         return track;
       }),
@@ -74,9 +83,9 @@ export class MicroTracksService extends HttpService {
   // performs a micro track search for the given query track and params
   getSearchTracks(query: Group, params: QueryParams, serverID: string): Observable<MicroTracks> {
     const body = {
-      intermediate: String(params.intermediate),
-      matched: String(params.matched),
-      query: query.genes.map((g) => g.family),
+      maxinsert: String(params.intermediate),
+      minmatched: String(params.matched),
+      families: query.genes.map((g) => g.family).join(","),
     };
     return this._makeRequest<MicroTracks>(serverID, "microSearch", body).pipe(
       map((tracks) => {

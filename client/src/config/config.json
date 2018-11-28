@@ -38,7 +38,7 @@
         "url": "http://localhost:1234/micro/genes-to-tracks"
       },
       "microSearch": {
-        "type": "GET",
+        "type": "POST",
         "url": "http://localhost:1234/micro/find-similar-tracks"
       },
       "microQuery": {

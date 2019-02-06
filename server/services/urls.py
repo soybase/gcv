@@ -36,6 +36,8 @@ urlpatterns = [
     url(r'^v1/macro-synteny/$', views.v1_macro_synteny),
     # genomic location to nearest gene
     url(r'^v1/nearest-gene/$', views.v1_nearest_gene),
+    #gene links
+    url(r'^v1/gene_links/(?P<gene_name>[^\/]+)/json', views.v1_gene_links),
 
     # v1.1
 

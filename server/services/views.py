@@ -632,6 +632,31 @@ def v1_micro_synteny_search(request):
         )
     return HttpResponseBadRequest()
 
+def v1_gene_links(request, gene_name):
+    links_json = [];
+    if gene_name.startswith("glyma.Wm82.gnm4.ann1.") :
+        gene_name = gene_name.replace("glyma.Wm82.gnm4.ann1.","");
+        links_json.append({
+            "href" : "https://soybase.org/gb2/gbrowse/glyma.Wm82.gnm4/?name=" + gene_name,
+            "text" : "View in SoyBase GBrowse"
+        });
+    elif gene_name.startswith("glyma.Lee.gnm1.ann1.") :
+        gene_name = gene_name.replace("glyma.Lee.gnm1.ann1.","");
+        links_json.append({
+            "href" : "https://soybase.org/gb2/gbrowse/glyma.Lee.gnm1/?name=" + gene_name,
+            "text" : "View in SoyBase GBrowse"
+        });
+    elif gene_name.startswith("glyso.PI483463.gnm1.ann1.") :
+        gene_name = gene_name.replace("glyso.PI483463.gnm1.ann1.","");
+        links_json.append({
+            "href" : "https://soybase.org/gb2/gbrowse/glyso.PI483463.gnm1/?name=" + gene_name,
+            "text" : "View in SoyBase GBrowse"
+        });
+    return HttpResponse(
+        json.dumps(links_json),
+        content_type='application/json; charset=utf8'
+    )
+
 
 # returns all the GENES for the given chromosome that have the same family as
 # the query

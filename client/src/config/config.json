@@ -69,6 +69,50 @@
         "type": "POST",
         "url": "/lis_context_server/services/v1_1/chromosome/"
       }
+    },
+    {
+      "id": "glycine",
+      "name": "Glycine genomes",
+      "macroColors": {
+        "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+        "functionName": "taxonChroma.get"
+      },
+      "microMulti": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1/micro-synteny-basic/"
+      },
+      "microSearch": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1/micro-synteny-search/"
+      },
+      "microQuery": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1/gene-to-query-track/"
+      },
+      "macro": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1_1/macro-synteny/"
+      },
+      "geneLinks": {
+        "type": "GET",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1/gene_links/"
+      },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "/chado_gene_phylotree_v2?family="
+      },
+      "plotGlobal": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1/global-plots/"
+      },
+      "nearestGene": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1/nearest-gene/"
+      },
+      "chromosome": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1_1/chromosome/"
+      }
     }
   ]
 }

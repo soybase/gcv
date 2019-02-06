@@ -23,6 +23,17 @@
       </div>
     </div>
 
+    <hr class="featurette-divider" *ngIf="dashboard.examples.length > 0">
+
+    <div class="row featurette" *ngIf="dashboard.examples.length > 0">
+      <div class="col-md-12">
+        <h2 class="featurette-heading">{{brand.name}} Examples<!-- <span class="text-muted">Checkmate.</span>--></h2>
+        <ul>
+          <li *ngFor="let example of dashboard.examples" [innerHTML]="example"></li>
+        </ul>
+      </div>
+    </div>
+
     <hr class="featurette-divider">
 
     <div class="row">
@@ -68,17 +79,6 @@
       </div>
       <div class="col-md-7 order-md-1">
         <img #multiScreenshot class="featurette-image img-fluid mx-auto" src="{{dashboard.multi.img}}" alt="Multi view screenshot">
-      </div>
-    </div>
-
-    <hr class="featurette-divider" *ngIf="dashboard.examples.length > 0">
-
-    <div class="row featurette" *ngIf="dashboard.examples.length > 0">
-      <div class="col-md-12">
-        <h2 class="featurette-heading">{{brand.name}} Examples<!-- <span class="text-muted">Checkmate.</span>--></h2>
-        <ul>
-          <li *ngFor="let example of dashboard.examples" [innerHTML]="example"></li>
-        </ul>
       </div>
     </div>
 

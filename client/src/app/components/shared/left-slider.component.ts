@@ -1,10 +1,10 @@
 // Angular
-import { Component, Input, OnChanges, SimpleChanges } from "@angular/core";
-
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from "@angular/core";
 // App
 import { toggleSlider } from "../../animations";
 import { SliderStates } from "../../constants";
-import { Family, Gene, Group, MicroTracks } from "../../models";
+import { Family, Gene, Group, MicroTracks, isFamily, isGene, isGroup } from "../../models";
+import { PointMixin } from "../../models/mixins";
 
 enum DetailTypes {
   PARAMS,
@@ -20,8 +20,9 @@ enum DetailTypes {
   templateUrl: "./left-slider.component.html",
 })
 export class LeftSliderComponent implements OnChanges {
-  @Input() selected: Family | Gene | Group | object;
+  @Input() selected: Family | Gene & PointMixin | Group | object;
   @Input() tracks: MicroTracks;
+  @Output() onClose = new EventEmitter<any>();
 
   state = SliderStates.SLIDER_ACTIVE;
 
@@ -33,15 +34,15 @@ export class LeftSliderComponent implements OnChanges {
   track;
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.selected instanceof Family) {
+    if (isFamily(this.selected)) {
       this.selectedDetail = DetailTypes.FAMILY;
       this.family = this.selected;
       this.show();
-    } else if (this.selected instanceof Gene) {
+    } else if (isGene(this.selected)) {
       this.selectedDetail = DetailTypes.GENE;
-      this.gene = this.selected;
+      this.gene = this.selected as Gene & PointMixin;
       this.show();
-    } else if (this.selected instanceof Group) {
+    } else if (isGroup(this.selected)) {
       this.selectedDetail = DetailTypes.TRACK;
       this.track = this.selected;
       this.show();
@@ -58,11 +59,19 @@ export class LeftSliderComponent implements OnChanges {
     }
   }
 
-  hide(): void {
+  // public methods
+
+  close(): void {
+    this.onClose.emit();
+  }
+
+  // private methods
+
+  private hide(): void {
     this.state = SliderStates.SLIDER_INACTIVE;
   }
 
-  show(): void {
+  private show(): void {
     this.state = SliderStates.SLIDER_ACTIVE;
   }
 }

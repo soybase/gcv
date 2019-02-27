@@ -3,17 +3,22 @@ import { AfterViewInit, Component, ComponentFactory, ComponentFactoryResolver,
   ComponentRef, ElementRef, OnDestroy, OnInit, QueryList, ViewContainerRef,
   ViewChild, ViewChildren, ViewEncapsulation } from "@angular/core";
 import { BehaviorSubject, Observable, Subject, combineLatest } from "rxjs";
-import { filter, map, take, takeUntil, withLatestFrom } from "rxjs/operators";
+import { filter, map, scan, take, takeUntil, withLatestFrom } from "rxjs/operators";
 // app
-import * as Split from "split.js";
+import Split from "split.js";
+import tippy from "tippy.js";
 import { GCV } from "../../../assets/js/gcv";
 import { AppConfig } from "../../app.config";
 import { Alert, Family, Gene, Group, MacroTracks, MicroTracks } from "../../models";
+import { DrawableMixin } from "../../models/mixins";
 import { macroTracksOperator, microTracksOperator, plotsOperator } from "../../operators";
 import { AlignmentService,  FilterService, MacroTracksService, MicroTracksService,
   PlotsService } from "../../services";
+import { Channel } from "../../utils";
 import { AlertComponent } from "../shared/alert.component";
 import { PlotViewerComponent } from "../viewers/plot.component";
+
+declare var $: any;
 
 declare let RegExp: any;  // TypeScript doesn't support regexp arguments
 declare let parseInt: any;  // TypeScript doesn't recognize number inputs
@@ -22,7 +27,8 @@ declare let parseInt: any;  // TypeScript doesn't recognize number inputs
   encapsulation: ViewEncapsulation.None,
   selector: "search",
   styleUrls: [ "./search.component.scss",
-               "../../../assets/css/split.scss" ],
+               "../../../assets/css/split.scss",
+               "../../../../node_modules/tippy.js/themes/light-border.css" ],
   templateUrl: "./search.component.html",
 })
 export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
@@ -74,7 +80,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   microLegend: any;
   microLegendArgs: any;
   microTracks: MicroTracks;
-  //queryGenes: Gene[];
+  familyGlyphs: Observable<{[key: string]: string}>;
 
   // macro viewers
   macroArgs: any;
@@ -83,12 +89,19 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   macroLegendArgs: any;
   macroTracks: MacroTracks;
 
+  // inter-app communication
+  private channel;
+  private eventBus;
+
   // store the vertical Split for resizing
   private verticalSplit: any;
   private legendWidths = [0, 0];  // [micro, macro]
 
   // emits when the component is destroyed
   private destroy: Subject<boolean>;
+
+  // track which families have been checked
+  private familyGlyphsSubject = new BehaviorSubject<{[key: string]: string}>({});
 
   // TODO: update observable subscriptions so this and subscribeToMacro aren't needed
   private macroTrackObservable: Observable<[MacroTracks, any]>;  // Observable<[MacroTracks, MicroTracks]>;
@@ -101,11 +114,25 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
               private microTracksService: MicroTracksService,
               private plotsService: PlotsService) {
     this.destroy = new Subject();
+    // hook the GCV eventbus into a Broadcast Channel
+    if (AppConfig.MISCELLANEOUS.communicationChannel !== undefined) {
+      this.channel = new Channel(AppConfig.MISCELLANEOUS.communicationChannel);
+      this.channel.onmessage((message) => {
+        message.data.flag = true;
+        GCV.common.eventBus.publish(message.data);
+      });
+      this.eventBus = GCV.common.eventBus.subscribe((event) => {
+        if (!event.flag) {
+          this.channel.postMessage(event, this.microTracks);
+        }
+      });
+    }
   }
 
   // Angular hooks
 
   ngAfterViewInit(): void {
+    // initialize Split.js
     this.verticalSplit = Split([this.left.nativeElement, this.right.nativeElement], {
         direction: "horizontal",
         minSize: 0,
@@ -118,9 +145,15 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
         direction: "vertical",
         minSize: 0,
       });
+    // enable tooltips
+    tippy("[data-tippy-content]", {animation: "fade", arrow: true, boundary: "viewport"});
   }
 
   ngOnDestroy(): void {
+    if (AppConfig.MISCELLANEOUS.communicationChannel !== undefined) {
+      this.channel.close();
+    }
+    this.eventBus.unsubscribe();
     this.destroy.next(true);
     this.destroy.complete();
   }
@@ -145,6 +178,8 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
           this._requestToAlertComponent(args.serverID, request, "query track", this.microAlerts);
         } else if (args.requestType === "microSearch") {
           this._requestToAlertComponent(args.serverID, request, "tracks", this.microAlerts);
+        } else if (args.requestType === "spanToSearch") {
+          this._requestToAlertComponent(args.serverID, request, "span", this.microAlerts);
         }
       });
     this.plotsService.requests
@@ -154,7 +189,59 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
       });
 
     // subscribe to micro track data
-    this.alignmentService.alignedMicroTracks
+
+    this.familyGlyphs = this.familyGlyphsSubject.asObservable()
+      .pipe(
+        scan((glyphs, {family, glyph}) => {
+          if (family === null && glyph === null) {
+            return {};
+          } else if (glyph === null) {
+            delete glyphs[family];
+          } else {
+            glyphs[family] = glyph;
+          }
+          return glyphs;
+        }),
+        takeUntil(this.destroy));
+
+    const glyphedAlignedTracks = combineLatest(
+        this.alignmentService.alignedMicroTracks,
+        this.familyGlyphs)
+      .pipe(
+        map(([tracks, glyphs]) => {
+          return {
+            // ensure the orphan family is present
+            families: [...tracks.families, {id: "", name: ""}].map((f) => {
+              if (glyphs.hasOwnProperty(f.id)) {
+                const family = Object.create(f);
+                family.glyph = glyphs[f.id];
+                return family;
+              }
+              return f;
+            }),
+            groups: tracks.groups.map((t) => {
+              const track = Object.create(t);
+              track.genes = t.genes.map((g) => {
+                if (glyphs.hasOwnProperty(g.family)) {
+                  const gene = Object.create(g);
+                  gene.glyph = glyphs[g.family];
+                  return gene;
+                }
+                return g;
+              });
+              return track;
+            }),
+          };
+        }));
+
+    this.microTracksService.microTracks
+      .pipe(takeUntil(this.destroy))
+      .subscribe((tracks) => {
+        this.hideLeftSlider();
+        this._setFamilyGlyph(null, null);
+      });
+
+    glyphedAlignedTracks
       .pipe(
         withLatestFrom(
           this.microTracksService.routeParams,
@@ -167,7 +254,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
 
     const filteredMicroTracks =
       combineLatest(
-        this.alignmentService.alignedMicroTracks,
+        glyphedAlignedTracks,
         this.filterService.regexpAlgorithm,
         this.filterService.orderAlgorithm)
       .pipe(microTracksOperator({skipFirst: true}));
@@ -175,6 +262,25 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
     filteredMicroTracks
       .pipe(takeUntil(this.destroy))
       .subscribe((tracks) => {
+        // add gene tooltips
+        tracks.groups.forEach((group) => {
+          group.genes = group.genes.map((gene) => {
+            const g = Object.create(gene);
+            g.htmlAttributes = {
+              "data-tippy-content": function (g) {
+                return `
+                  <div class="media" style="text-align:left;">
+                    <div class="media-body">
+                      <h6 class="mt-0 mb-1"><b>${g.name}</b> (${g.family})</h6>
+                      ${g.fmin} - ${g.fmax}
+                    </div>
+                  </div>
+                `;
+              }
+            };
+            return g;
+          });
+        });
         this.microTracks = tracks as MicroTracks;
       });
 
@@ -282,42 +388,20 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   // left slider
-  // EVIL: typescript checks types at compile time so we have to explicitly
-  // instantiate those that will be checked by left-slider at run-time
 
   hideLeftSlider(): void {
     this.selectedDetail = null;
   }
 
-  selectFamily(family: Family): void {
-    const f = Object.assign(Object.create(Family.prototype), family);
-    this.selectedDetail = f;
-  }
-
-  selectGene(gene: Gene): void {
-    // TODO: this uses specific knowledge about the origins of gene objects, instead,
-    // create a util function that returns all objects in prototype chain and spead
-    // into assign
-    const g = Object.assign(Object.create(Gene.prototype), Object.getPrototypeOf(gene));
-    //HACK: needed for determination of alignedGene for CoGe linking; ask acleary what the right way to get this info back is; there was some previous breakage
-    //around linkout functionality that I think can be seen here:
-    //git diff 7eeff865418c4db05b63355f241beed497c1b52d 7155a9733c990652a5aafacce9bd5b46d3d70313 src/app/components/search/search.component.ts
-    //I guess we didn't notice at the time that we had lost the CoGe function
-    //which only exists on legume*-settings branches
-    g.x = gene.x;
-    this.selectedDetail = g;
-  }
-
-  selectParams(): void {
-    this.selectedDetail = {};
-  }
-
-  selectTrack(track: Group): void {
-    const t = Object.assign(Object.create(Group.prototype), track);
-    this.selectedDetail = t;
+  selectDetail(detail: {} | Family | Gene | Group = {}): void {
+    this.selectedDetail = detail;
   }
 
   // private
+
+  private _setFamilyGlyph(family: string, glyph: string): void {
+    this.familyGlyphsSubject.next({family, glyph});
+  }
 
   private _setSplitWidth(legend: number, size: any): void {
     if (this.verticalSplit !== undefined) {
@@ -403,7 +487,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
     return {
       autoResize: true,
       highlight,
-      selector: "genus-species",
+      selector: "organism",
       sizeCallback: this._setSplitWidth.bind(this, 1),
     };
   }
@@ -413,27 +497,46 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
       autoResize: true,
       boldFirst: true,
       geneClick: function (g, track) {
-        this.selectGene(g);
+        this.selectDetail(g);
       }.bind(this),
       highlight: [focusName],
       plotClick: function (p) {
         this.selectPlot(p);
       }.bind(this),
       nameClick: function (t) {
-        this.selectTrack(t);
+        this.selectDetail(t);
       }.bind(this),
-      selectiveColoring: familySizes
+      selectiveColoring: familySizes,
+      onInit: function () {
+        tippy(
+          ".GCV [data-tippy-content]",
+          {
+            animation: "fade",
+            arrow: true,
+            boundary: "viewport",
+            theme: "light-border",
+            interactive: true,
+            maxWidth: null,
+            delay: [500, 20],
+          }
+        );
+      }
     };
   }
 
-  private _getMicroLegendArgs(singletonIds: string, highlight: string[], familySizes: any): any {
+  private _getMicroLegendArgs(singleton: Family, orphan: Family, highlight: string[], familySizes: any): any {
     return {
       autoResize: true,
-      blank: {name: "Singletons", id: singletonIds},
-      blankDashed: {name: "Orphans", id: ""},
+      blank: singleton,
+      blankDashed: orphan,
+      checkboxes: [""],
+      checkboxCallback: function(f, checked) {
+        const glyph = (checked ?  null : "circle");
+        this._setFamilyGlyph(f, glyph);
+      }.bind(this),
       highlight,
       keyClick: function(f) {
-        this.selectFamily(f);
+        this.selectDetail(f);
       }.bind(this),
       multiDelimiter: ",",
       selectiveColoring: familySizes,
@@ -446,7 +549,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
     return {
       autoResize: true,
       geneClick: function(g, track) {
-        this.selectGene(g);
+        this.selectDetail(g);
       }.bind(this),
       outlier: -1,
       plotClick: function(p) {
@@ -529,10 +632,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
       const singletonIds = ["singleton"].concat(uniqueFamilies.filter((f) => {
         return familySizes === undefined || familySizes[f.id] === 1;
       }).map((f) => f.id)).join(",");
-
-      // micro legend arguments
-      const highlight = [focus !== undefined ? focus.family : undefined];
-      this.microLegendArgs = this._getMicroLegendArgs(singletonIds, highlight, familySizes);
+      const singleton: Family = {name: "Singletons", id: singletonIds};
 
       // generate micro legend data
       const presentFamilies = tracks.groups.reduce((l, group) => {
@@ -541,6 +641,15 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
       this.microLegend = uniqueFamilies.filter((f) => {
         return presentFamilies.indexOf(f.id) !== -1 && f.name !== "";
       });
+      const orphan: Family & DrawableMixin = {name: "Orphans", id: ""};
+      if (familyMap.hasOwnProperty("") && familyMap[""].glyph !== undefined) {
+        orphan.glyph = familyMap[""].glyph;
+        orphan.checked = false;
+      }
+
+      // micro legend arguments
+      const highlight = [focus !== undefined ? focus.family : undefined];
+      this.microLegendArgs = this._getMicroLegendArgs(singleton, orphan, highlight, familySizes);
     }
   }
 

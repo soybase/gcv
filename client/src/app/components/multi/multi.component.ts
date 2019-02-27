@@ -2,22 +2,28 @@
 import { AfterViewInit, Component, ComponentFactory, ComponentFactoryResolver,
   ComponentRef, ElementRef, OnDestroy, OnInit, ViewChild, ViewContainerRef,
   ViewEncapsulation } from "@angular/core";
-import { Subject, combineLatest } from "rxjs";
-import { filter, takeUntil, withLatestFrom } from "rxjs/operators";
+import { BehaviorSubject, Observable, Subject, combineLatest } from "rxjs";
+import { filter, map, scan, takeUntil, withLatestFrom } from "rxjs/operators";
 import { GCV } from "../../../assets/js/gcv";
 // app
-import * as Split from "split.js";
+import Split from "split.js";
+import tippy from "tippy.js";
 import { AppConfig } from "../../app.config";
 import { Alert, Family, Gene, Group, MacroTracks, MicroTracks } from "../../models";
+import { ClusterMixin, DrawableMixin, PointMixin } from "../../models/mixins";
 import { microTracksOperator, multiMacroTracksOperator } from "../../operators";
 import { AlignmentService, FilterService, MacroTracksService, MicroTracksService } from "../../services";
+import { Channel } from "../../utils";
 import { AlertComponent } from "../shared/alert.component";
+
+declare var $: any;
 
 @Component({
   encapsulation: ViewEncapsulation.None,
   selector: "multi",
   styleUrls: [ "./multi.component.scss",
-               "../../../assets/css/split.scss" ],
+               "../../../assets/css/split.scss",
+               "../../../../node_modules/tippy.js/themes/light-border.css" ],
   templateUrl: "./multi.component.html",
 })
 export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
@@ -46,7 +52,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   microLegend: any;
   microLegendArgs: any;
   microTracks: MicroTracks;
-  //queryGenes: string[];
+  familyGlyphs: Observable<{[key: string]: string}>;
 
   // marco viewers
   macroArgs: any;
@@ -54,10 +60,14 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   macroLegend: any;
   macroLegendArgs = {
     autoResize: true,
-    selector: "genus-species",
+    selector: "organism",
     sizeCallback: this._setSplitWidth.bind(this, 1),
   };
   macroTracks: MacroTracks[];
+
+  // inter-app communication
+  private channel;
+  private eventBus;
 
   // store the vertical Split for resizing
   private verticalSplit: any;
@@ -66,17 +76,34 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   // emits when the component is destroyed
   private destroy: Subject<boolean>;
 
+  // track which families have been checked
+  private familyGlyphsSubject = new BehaviorSubject<{[key: string]: string}>({});
+
   constructor(private alignmentService: AlignmentService,
               private resolver: ComponentFactoryResolver,
               private filterService: FilterService,
               private macroTracksService: MacroTracksService,
               private microTracksService: MicroTracksService) {
     this.destroy = new Subject();
+    // hook the GCV eventbus into a Broadcast Channel
+    if (AppConfig.MISCELLANEOUS.communicationChannel !== undefined) {
+      this.channel = new Channel(AppConfig.MISCELLANEOUS.communicationChannel);
+      this.channel.onmessage((message) => {
+        message.data.flag = true;
+        GCV.common.eventBus.publish(message.data);
+      });
+      this.eventBus = GCV.common.eventBus.subscribe((event) => {
+        if (!event.flag) {
+          this.channel.postMessage(event, this.microTracks);
+        }
+      });
+    }
   }
 
   // Angular hooks
 
   ngAfterViewInit(): void {
+    // initialize Split.js
     this.verticalSplit = Split([this.left.nativeElement, this.right.nativeElement], {
         direction: "horizontal",
         minSize: 0,
@@ -89,9 +116,15 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
         direction: "vertical",
         minSize: 0,
       });
+    // enable tooltips
+    tippy("[data-tippy-content]", {animation: "fade", arrow: true, boundary: "viewport"});
   }
 
   ngOnDestroy(): void {
+    if (AppConfig.MISCELLANEOUS.communicationChannel !== undefined) {
+      this.channel.close();
+    }
+    this.eventBus.unsubscribe();
     this.destroy.next(true);
     this.destroy.complete();
   }
@@ -119,17 +152,69 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
       });
 
     // subscribe to micro track data
+
+    this.familyGlyphs = this.familyGlyphsSubject.asObservable()
+      .pipe(
+        scan((glyphs, {family, glyph}) => {
+          if (family === null && glyph === null) {
+            return {};
+          } else if (glyph === null) {
+            delete glyphs[family];
+          } else {
+            glyphs[family] = glyph;
+          }
+          return glyphs;
+        }),
+        takeUntil(this.destroy));
+
+    const glyphedAlignedTracks: Observable<MicroTracks<DrawableMixin, ClusterMixin, DrawableMixin & PointMixin>> = combineLatest(
+        this.alignmentService.alignedMicroTracks,
+        this.familyGlyphs)
+      .pipe(
+        map(([tracks, glyphs]) => {
+          return {
+            // ensure the orphan family is present
+            families: [...tracks.families, {id: "", name: ""}].map((f) => {
+              if (glyphs.hasOwnProperty(f.id)) {
+                const family = Object.create(f);
+                family.glyph = glyphs[f.id];
+                return family;
+              }
+              return f;
+            }),
+            groups: tracks.groups.map((t) => {
+              const track = Object.create(t);
+              track.genes = t.genes.map((g) => {
+                if (glyphs.hasOwnProperty(g.family)) {
+                  const gene = Object.create(g);
+                  gene.glyph = glyphs[g.family];
+                  return gene;
+                }
+                return g;
+              });
+              return track;
+            }),
+          };
+        }));
+
     this.alignmentService.alignedMicroTracks
+      .pipe(takeUntil(this.destroy))
+      .subscribe((tracks) => {
+        this.hideLeftSlider();
+        this._setFamilyGlyph(null, null);
+      });
+
+    glyphedAlignedTracks
       .pipe(
         withLatestFrom(this.microTracksService.routeParams),
         takeUntil(this.destroy))
       .subscribe(([tracks, route]) => {
-        this._onAlignedMicroTracks(tracks as MicroTracks, route);
+        this._onAlignedMicroTracks(tracks, route);
       });
 
     const filteredMicroTracks =
       combineLatest(
-        this.alignmentService.alignedMicroTracks,
+        glyphedAlignedTracks,
         this.filterService.regexpAlgorithm,
         this.filterService.orderAlgorithm)
       .pipe(microTracksOperator({prefix: (t) => "group " + t.cluster + " - "}));
@@ -137,6 +222,25 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
     filteredMicroTracks
       .pipe(takeUntil(this.destroy))
       .subscribe((tracks) => {
+        // add gene tooltips
+        tracks.groups.forEach((group) => {
+          group.genes = group.genes.map((gene) => {
+            const g = Object.create(gene);
+            g.htmlAttributes = {
+              "data-tippy-content": function (g) {
+                return `
+                  <div class="media" style="text-align:left;">
+                    <div class="media-body">
+                      <h6 class="mt-0 mb-1"><b>${g.name}</b> (${g.family})</h6>
+                      ${g.fmin} - ${g.fmax}
+                    </div>
+                  </div>
+                `;
+              }
+            };
+            return g;
+          });
+        });
         this.microTracks = tracks as MicroTracks;
       });
 
@@ -161,36 +265,20 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   // left slider
-  // EVIL: typescript checks types at compile time so we have to explicitly
-  // instantiate those that will be checked by left-slider at run-time
 
   hideLeftSlider(): void {
     this.selectedDetail = null;
   }
 
-  selectFamily(family: Family): void {
-    const f = Object.assign(Object.create(Family.prototype), family);
-    this.selectedDetail = f;
-  }
-
-  selectGene(gene: Gene): void {
-    // TODO: this uses specific knowledge about the origins of gene objects, instead,
-    // create a util function that returns all objects in prototype chain and spead
-    // into assign
-    const g = Object.assign(Object.create(Gene.prototype), Object.getPrototypeOf(gene));
-    this.selectedDetail = g;
-  }
-
-  selectParams(): void {
-    this.selectedDetail = {};
-  }
-
-  selectTrack(track: Group): void {
-    const t = Object.assign(Object.create(Group.prototype), track);
-    this.selectedDetail = t;
+  selectDetail(detail: {} | Family | Gene | Group = {}): void {
+    this.selectedDetail = detail;
   }
 
   // private
+
+  private _setFamilyGlyph(family: string, glyph: string): void {
+    this.familyGlyphsSubject.next({family, glyph});
+  }
 
   private _setSplitWidth(legend: number, size: any): void {
     if (this.verticalSplit !== undefined) {
@@ -204,7 +292,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
     }
   }
 
-  private _onAlignedMicroTracks(tracks: MicroTracks, route): void {
+  private _onAlignedMicroTracks(tracks: MicroTracks<DrawableMixin, ClusterMixin>, route): void {
     if (tracks.groups.length > 0 && tracks.groups[0].genes.length > 0) {
       // update alert
       this.headerAlert = this._getHeaderAlert(tracks);
@@ -257,15 +345,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
       const singletonIds = ["singleton"].concat(uniqueFamilies.filter((f) => {
         return familySizes === undefined || familySizes[f.id] === 1;
       }).map((f) => f.id)).join(",");
-
-      // micro legend arguments
-      const highlight = tracks.groups.reduce((l, group) => {
-        const families = group.genes
-          .filter((g) => route.genes.indexOf(g.name) !== -1)
-          .map((g) => g.family);
-        return l.concat(families);
-      }, []);
-      this.microLegendArgs = this._getMicroLegendArgs(singletonIds, highlight, familySizes);
+      const singleton: Family = {name: "Singletons", id: singletonIds};
 
       // micro legend data
       const presentFamilies = tracks.groups.reduce((l, group) => {
@@ -274,6 +354,20 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
       this.microLegend = uniqueFamilies.filter((f) => {
         return presentFamilies.indexOf(f.id) !== -1 && f.name !== "";
       });
+      const orphan: Family & DrawableMixin = {name: "Orphans", id: ""};
+      if (familyMap.hasOwnProperty("") && familyMap[""].glyph !== undefined) {
+        orphan.glyph = familyMap[""].glyph;
+        orphan.checked = false;
+      }
+
+      // micro legend arguments
+      const highlight = tracks.groups.reduce((l, group) => {
+        const families = group.genes
+          .filter((g) => route.genes.indexOf(g.name) !== -1)
+          .map((g) => g.family);
+        return l.concat(families);
+      }, []);
+      this.microLegendArgs = this._getMicroLegendArgs(singleton, orphan, highlight, familySizes);
     }
   }
 
@@ -292,7 +386,7 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
     }
   }
 
-  private _getHeaderAlert(tracks: MicroTracks): Alert {
+  private _getHeaderAlert(tracks: MicroTracks<DrawableMixin, ClusterMixin>): Alert {
     let message = "";
     const numTracks = tracks.groups.length;
     message += numTracks + " track" + ((numTracks !== 1) ? "s" : "") + " returned; ";
@@ -374,25 +468,44 @@ export class MultiComponent implements AfterViewInit, OnDestroy, OnInit {
     return {
       autoResize: true,
       geneClick: function(g, track) {
-        this.selectGene(g);
+        this.selectDetail(g);
       }.bind(this),
       highlight: focusNames,
       nameClick: function(t) {
-        this.selectTrack(t);
+        this.selectDetail(t);
       }.bind(this),
       selectiveColoring: familySizes,
       prefix: (t) => "group " + t.cluster + " - ",
+      onInit: function () {
+        tippy(
+          ".GCV [data-tippy-content]",
+          {
+            animation: "fade",
+            arrow: true,
+            boundary: "viewport",
+            theme: "light-border",
+            interactive: true,
+            maxWidth: null,
+            delay: [500, 20],
+          }
+        );
+      }
     };
   }
 
-  private _getMicroLegendArgs(singletonIds: any, highlight: string[], familySizes: any): any {
+  private _getMicroLegendArgs(singleton: Family, orphan: Family, highlight: string[], familySizes: any): any {
     return {
       autoResize: true,
-      blank: {name: "Singletons", id: singletonIds},
-      blankDashed: {name: "Orphans", id: ""},
+      blank: singleton,
+      blankDashed: orphan,
+      checkboxes: [""],
+      checkboxCallback: function(f, checked) {
+        const glyph = (checked ? null : "circle");
+        this._setFamilyGlyph(f, glyph);
+      }.bind(this),
       highlight,
       keyClick: function(f) {
-        this.selectFamily(f);
+        this.selectDetail(f);
       }.bind(this),
       multiDelimiter: ",",
       selectiveColoring: familySizes,

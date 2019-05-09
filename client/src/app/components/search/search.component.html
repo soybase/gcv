@@ -161,16 +161,8 @@
   </main-content>
 
   <main-content [hidden]="selectedContent!==contentTypes.PLOTS">
-    <div class="row plots" (scroll)="drawPlots()">
-      <div class="plot col-sm-6 col-md-4" *ngFor="let p of microPlots">
-        <viewer-plot
-          [data]="p"
-          [colors]="microColors"
-          [arguments]="plotArgs"
-          [visibleDraw]="true" >
-        </viewer-plot>
-      </div>
-    </div>
+    <viewer-multi-plot [data]="microPlots" [colors]="microColors">
+    </viewer-multi-plot>
   </main-content>
 
 </app-main>

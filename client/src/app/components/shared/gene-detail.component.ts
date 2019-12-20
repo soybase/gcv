@@ -9,6 +9,7 @@ import { AppConfig } from "../../app.config";
 import { MicroTracks } from '../../models/micro-tracks.model';
 import { Alert, Gene, Server } from "../../models";
 import { DetailsService } from "../../services";
+import { PointMixin } from "../../models/mixins";
 
 @Component({
   selector: "gene-detail",
@@ -36,13 +37,13 @@ import { DetailsService } from "../../services";
 })
 
 export class GeneDetailComponent implements OnChanges, OnDestroy, OnInit {
-  @Input() gene: Gene;
+  @Input() gene: Gene & PointMixin;
   @Input() tracks: MicroTracks;
 
   @ViewChild("alerts", {read: ViewContainerRef}) alerts: ViewContainerRef;
 
   links: any[];
-  alignedQueryGene: Gene;
+  alignedQueryGene: Gene & PointMixin;
   familyTreeLink: string;
 
   private _serverIDs = AppConfig.SERVERS.map(s => s.id);
@@ -77,7 +78,7 @@ export class GeneDetailComponent implements OnChanges, OnDestroy, OnInit {
 
 
       if (this.tracks !== undefined) {
-        var queryGenes = this.tracks.groups[0].genes;       
+        var queryGenes = this.tracks.groups[0].genes as Array<Gene & PointMixin>;       
         var alignmentColumn = this.gene.x;
         this.alignedQueryGene = queryGenes.find(function(g){return g.x==alignmentColumn;});
         if (this.alignedQueryGene !== undefined && this.gene.name == this.alignedQueryGene.name) {

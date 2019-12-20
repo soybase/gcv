@@ -1,6 +1,7 @@
 import { Server } from "./server.model";
 
 export class Brand {
+  favicon?: string;
   url?: string;
   img?: string;
   name?: string;
@@ -19,7 +20,8 @@ export class Dashboard {
 }
 
 export class Miscellaneous {
-  geneSearchPlaceholder?: string;
+  searchPlaceholder?: string;
+  communicationChannel?: string;
 }
 
 export class Tour {

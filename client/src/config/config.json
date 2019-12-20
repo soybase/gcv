@@ -20,7 +20,8 @@
     ]
   },
   "miscellaneous": {
-    "geneSearchPlaceholder": "e.g. phavu.Phvul.002G100400"
+    "searchPlaceholder": "e.g. phavu.Phvul.002G100400 or phavu.Chr02:13142457-13496658",
+    "communicationChannel": "GCV"
   },
   "tours": [
     {"script": "default.js", "name": "defaultTour"}
@@ -68,6 +69,10 @@
       "chromosome": {
         "type": "POST",
         "url": "/lis_context_server/services/v1_1/chromosome/"
+      },
+      "spanToSearch": {
+        "type": "POST",
+        "url": "/lis_context_server/services/v1_1/span-to-context/"
       }
     },
     {
@@ -112,6 +117,10 @@
       "chromosome": {
         "type": "POST",
         "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1_1/chromosome/"
+      },
+      "spanToSearch": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1_1/span-to-context/"
       }
     }
   ]

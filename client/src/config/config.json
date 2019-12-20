@@ -30,7 +30,7 @@
       "id": "lis",
       "name": "Legume Information System",
       "macroColors": {
-        "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+        "scriptUrl": "https://cdn.jsdelivr.net/gh/legumeinfo/lis-taxon-symbology@01e02d99dd9490df7e4925af243ffb380b75b59d/dist/bundle.js",
         "functionName": "taxonChroma.get"
       },
       "microMulti": {
@@ -74,7 +74,7 @@
       "id": "glycine",
       "name": "Glycine genomes",
       "macroColors": {
-        "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+        "scriptUrl": "https://cdn.jsdelivr.net/gh/legumeinfo/lis-taxon-symbology@01e02d99dd9490df7e4925af243ffb380b75b59d/dist/bundle.js",
         "functionName": "taxonChroma.get"
       },
       "microMulti": {

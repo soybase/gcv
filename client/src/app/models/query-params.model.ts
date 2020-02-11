@@ -11,7 +11,7 @@ export class QueryParams {
   constructor(
     public neighbors: number = 10,
     public sources: string[] = AppConfig.SERVERS.map((s) => s.id),
-    public matched: number = 4,
+    public matched: number = .4,
     public intermediate: number = 5,
   ) { }
 

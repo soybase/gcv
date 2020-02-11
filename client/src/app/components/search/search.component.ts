@@ -1,7 +1,7 @@
 // Angular
 import { AfterViewInit, Component, ComponentFactory, ComponentFactoryResolver,
-  ComponentRef, ElementRef, OnDestroy, OnInit, QueryList, ViewContainerRef,
-  ViewChild, ViewChildren, ViewEncapsulation } from "@angular/core";
+  ComponentRef, ElementRef, NgZone, OnDestroy, OnInit, QueryList,
+  ViewContainerRef, ViewChild, ViewChildren, ViewEncapsulation } from "@angular/core";
 import { BehaviorSubject, Observable, Subject, combineLatest } from "rxjs";
 import { filter, map, scan, take, takeUntil, withLatestFrom } from "rxjs/operators";
 // app
@@ -12,9 +12,8 @@ import { AppConfig } from "../../app.config";
 import { Alert, Family, Gene, Group, MacroTracks, MicroTracks } from "../../models";
 import { DrawableMixin } from "../../models/mixins";
 import { macroTracksOperator, microTracksOperator, plotsOperator } from "../../operators";
-import { AlignmentService,  FilterService, MacroTracksService, MicroTracksService,
-  PlotsService } from "../../services";
-import { Channel } from "../../utils";
+import { AlignmentService, FilterService, InterAppCommunicationService,
+  MacroTracksService, MicroTracksService, PlotsService } from "../../services";
 import { AlertComponent } from "../shared/alert.component";
 import { PlotViewerComponent } from "../viewers/plot.component";
 
@@ -27,21 +26,20 @@ declare let parseInt: any;  // TypeScript doesn't recognize number inputs
   encapsulation: ViewEncapsulation.None,
   selector: "search",
   styleUrls: [ "./search.component.scss",
-               "../../../assets/css/split.scss",
-               "../../../../node_modules/tippy.js/themes/light-border.css" ],
+               "../../../assets/css/split.scss" ],
   templateUrl: "./search.component.html",
 })
 export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   // view children
-  @ViewChild("left") left: ElementRef;
-  @ViewChild("topLeft") topLeft: ElementRef;
-  @ViewChild("bottomLeft") bottomLeft: ElementRef;
-  @ViewChild("right") right: ElementRef;
-  @ViewChild("topRight") topRight: ElementRef;
-  @ViewChild("bottomRight") bottomRight: ElementRef;
-  @ViewChild("macroAlerts", {read: ViewContainerRef}) macroAlerts: ViewContainerRef;
-  @ViewChild("microAlerts", {read: ViewContainerRef}) microAlerts: ViewContainerRef;
-  @ViewChild("plotAlerts", {read: ViewContainerRef}) plotAlerts: ViewContainerRef;
+  @ViewChild("left", {static: true}) left: ElementRef;
+  @ViewChild("topLeft", {static: true}) topLeft: ElementRef;
+  @ViewChild("bottomLeft", {static: true}) bottomLeft: ElementRef;
+  @ViewChild("right", {static: true}) right: ElementRef;
+  @ViewChild("topRight", {static: true}) topRight: ElementRef;
+  @ViewChild("bottomRight", {static: true}) bottomRight: ElementRef;
+  @ViewChild("macroAlerts", {static: true, read: ViewContainerRef}) macroAlerts: ViewContainerRef;
+  @ViewChild("microAlerts", {static: true, read: ViewContainerRef}) microAlerts: ViewContainerRef;
+  @ViewChild("plotAlerts", {static: true, read: ViewContainerRef}) plotAlerts: ViewContainerRef;
   @ViewChildren(PlotViewerComponent) plotComponents: QueryList<PlotViewerComponent>;
 
   headerAlert = new Alert("info", "Loading...");
@@ -90,7 +88,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   macroTracks: MacroTracks;
 
   // inter-app communication
-  private channel;
+  communicate: boolean = AppConfig.COMMUNICATION.channel !== undefined;
   private eventBus;
 
   // store the vertical Split for resizing
@@ -110,22 +108,15 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   constructor(private alignmentService: AlignmentService,
               private resolver: ComponentFactoryResolver,
               private filterService: FilterService,
+              private communicationService: InterAppCommunicationService,
               private macroTracksService: MacroTracksService,
               private microTracksService: MicroTracksService,
+              private zone: NgZone,
               private plotsService: PlotsService) {
     this.destroy = new Subject();
     // hook the GCV eventbus into a Broadcast Channel
-    if (AppConfig.MISCELLANEOUS.communicationChannel !== undefined) {
-      this.channel = new Channel(AppConfig.MISCELLANEOUS.communicationChannel);
-      this.channel.onmessage((message) => {
-        message.data.flag = true;
-        GCV.common.eventBus.publish(message.data);
-      });
-      this.eventBus = GCV.common.eventBus.subscribe((event) => {
-        if (!event.flag) {
-          this.channel.postMessage(event, this.microTracks);
-        }
-      });
+    if (this.communicate) {
+      this._setupCommunication();
     }
   }
 
@@ -150,10 +141,9 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   ngOnDestroy(): void {
-    if (AppConfig.MISCELLANEOUS.communicationChannel !== undefined) {
-      this.channel.close();
+    if (this.communicate) {
+      this.eventBus.unsubscribe();
     }
-    this.eventBus.unsubscribe();
     this.destroy.next(true);
     this.destroy.complete();
   }
@@ -399,6 +389,43 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
 
   // private
 
+  private _setupCommunication(): void {
+    this.communicationService.messages
+      .pipe(takeUntil(this.destroy))
+      .subscribe((message) => {
+        // perform an extent search if extent not in micro-synteny
+        if (message.data.targets.hasOwnProperty("chromosome") &&
+            message.data.targets.hasOwnProperty("extent")) {
+          const c = message.data.targets.chromosome;
+          const [low, high] = message.data.targets.extent;
+          const i = this.microTracks.groups.map((g) => g.chromosome_name).indexOf(c);
+          if (i !== -1) {
+            const genes = this.microTracks.groups[i].genes.filter((g) => {
+              return g.fmin >= low && g.fmin <= high ||
+                     g.fmax >= low && g.fmax <= high;
+            });
+            if (genes.length === 0) {
+              this.zone.run(() => {
+                this.microTracksService.spanSearch(c, low, high);
+              });
+            }
+          } else {
+            this.zone.run(() => {
+              this.microTracksService.spanSearch(c, low, high);
+            });
+          }
+        }
+        // propogate the message
+        message.data.flag = true;
+        GCV.common.eventBus.publish(message.data);
+      });
+    this.eventBus = GCV.common.eventBus.subscribe((event) => {
+      if (!event.flag) {
+        this.communicationService.postMessage(event, this.microTracks);
+      }
+    });
+  }
+
   private _setFamilyGlyph(family: string, glyph: string): void {
     this.familyGlyphsSubject.next({family, glyph});
   }
@@ -512,6 +539,7 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
           ".GCV [data-tippy-content]",
           {
             animation: "fade",
+            appendTo: document.body,
             arrow: true,
             boundary: "viewport",
             theme: "light-border",
@@ -613,13 +641,13 @@ export class SearchComponent implements AfterViewInit, OnDestroy, OnInit {
 
       // make sure families are unique and ordered by appearance in tracks
       // TODO: move uniqueness to reducer and ordering to selector
-      const orderedUniqueFamilyIds = new Set();
+      const orderedUniqueFamilyIds = new Set<string>();
       tracks.groups.forEach((group) => {
         group.genes.forEach((gene) => {
           orderedUniqueFamilyIds.add(gene.family);
         });
       });
-      const familyMap = {};
+      const familyMap: any = {};
       tracks.families.forEach((f) => {
         familyMap[f.id] = f;
       });

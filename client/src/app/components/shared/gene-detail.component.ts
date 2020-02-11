@@ -40,7 +40,7 @@ export class GeneDetailComponent implements OnChanges, OnDestroy, OnInit {
   @Input() gene: Gene & PointMixin;
   @Input() tracks: MicroTracks;
 
-  @ViewChild("alerts", {read: ViewContainerRef}) alerts: ViewContainerRef;
+  @ViewChild("alerts", {static: true, read: ViewContainerRef}) alerts: ViewContainerRef;
 
   links: any[];
   alignedQueryGene: Gene & PointMixin;

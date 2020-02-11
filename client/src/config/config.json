@@ -122,6 +122,54 @@
         "type": "POST",
         "url": "https://gcv-services.lis.ncgr.org/glycine/services/v1_1/span-to-context/"
       }
+    },
+    {
+      "id": "phaseolus",
+      "name": "Phaseolus genomes",
+      "macroColors": {
+        "scriptUrl": "https://cdn.jsdelivr.net/gh/legumeinfo/lis-taxon-symbology@01e02d99dd9490df7e4925af243ffb380b75b59d/dist/bundle.js",
+        "functionName": "taxonChroma.get"
+      },
+      "microMulti": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1/micro-synteny-basic/"
+      },
+      "microSearch": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1/micro-synteny-search/"
+      },
+      "microQuery": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1/gene-to-query-track/"
+      },
+      "macro": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1_1/macro-synteny/"
+      },
+      "geneLinks": {
+        "type": "GET",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1_1/gene-links/"
+      },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "/chado_gene_phylotree_v2?family="
+      },
+      "plotGlobal": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1/global-plots/"
+      },
+      "nearestGene": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1/nearest-gene/"
+      },
+      "chromosome": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1_1/chromosome/"
+      },
+      "spanToSearch": {
+        "type": "POST",
+        "url": "https://gcv-services.lis.ncgr.org/phaseolus/services/v1_1/span-to-context/"
+      }
     }
   ]
 }

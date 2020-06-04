@@ -1,10 +1,10 @@
 {
   "brand": {
-    "favicon": "favicon.ico",
-    "url": "https://legumeinfo.org/",
-    "img": "/config/img/papillionoid.png",
-    "name": "LIS - Legume Information System",
-    "slogan": "Information about legume traits for crop improvement"
+    "favicon": "/config/img/soybase-favicon.ico",
+    "url": "https://soybase.org/",
+    "img": "/config/img/sb_logo_alone_rt_bright1.png",
+    "name": "SoyBase",
+    "slogan": "Integrating Genetics and Genomics to Advance Soybean Research"
   },
   "communication": {
     "channel": "lis"
@@ -37,14 +37,14 @@
     ]
   },
   "miscellaneous": {
-    "searchHelpText": "Try <b>phavu.Phvul.002G100400</b> or <b>glyma.Glyma.15G255600</b>"
+    "searchHelpText": "Try <b>glyma.Wm82.gnm4.ann1.Glyma.01G000100</b> or <b>glyma.Lee.gnm1.ann1.GlymaLee.02G000400</b>"
   },
   "servers": [
     {
-      "id": "lis",
-      "name": "Legume Information System",
-      "description": "Info about legume traits for crop improvement.",
-      "website": "https://legumeinfo.org/",
+      "id": "soybase",
+      "name": "SoyBase",
+      "description": "Integrating Genetics and Genomics to Advance Soybean Research",
+      "website": "https://soybase.org/",
       "macroColors": {
         "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
         "functionName": "taxonChroma.get"

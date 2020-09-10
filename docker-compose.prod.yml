@@ -6,6 +6,8 @@ services:
       context: client
       args:
         GCV_SUB_URI: '${GCV_SUB_URI:-/}'
+    environment:
+      GCV_SUB_URI: '${GCV_SUB_URI:-/}'
     ports:
       - "${GCV_PORT:-80}:80"
     depends_on:
@@ -17,7 +19,6 @@ services:
     environment:
       ALLOWED_HOSTS: '*'
       DEBUG: '0'
-      GCV_SUB_URI: '/'
       PGDATABASE: postgres
       PGHOST: /run/postgresql
       PGNAME: postgres

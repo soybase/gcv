@@ -19,10 +19,8 @@ services:
       ALLOWED_HOSTS: '*'
       DEBUG: '1'
       PGDATABASE: postgres
-      PGHOST: db
+      PGHOST: /run/postgresql
       PGNAME: postgres
-      PGPASSWORD: postgres
-      PGPORT: 5432
       PGUSER: postgres
     depends_on:
       db:
@@ -31,16 +29,19 @@ services:
       - "8000:8000"
     volumes:
       - ./server:/app:ro
+      - postgres-sock:/run/postgresql
 
   db:
     image: postgres:12.3-alpine
     environment:
       POSTGRES_PASSWORD: postgres
     healthcheck:
-      test: "pg_isready -U postgres -h 127.0.0.1 || exit 1"
+      test: "pg_isready -U postgres || exit 1"
       retries: 10
+    command: -c listen_addresses=''
     volumes:
       - ./db/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+      - postgres-sock:/run/postgresql
 
   redisearch:
     image: redislabs/redisearch:1.6.13
@@ -57,11 +58,12 @@ services:
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: db
+      POSTGRES_HOST: /run/postgresql
       REDIS_HOST: redisearch
     command:
       - --no-reload
+    volumes:
+      - postgres-sock:/run/postgresql
 
   gene_search:
     build: search/microservices/gene_search
@@ -119,3 +121,6 @@ services:
       CHROMOSOME_REGION_ADDR: chromosome_region:8081
     command:
       - --no-grpc
+
+volumes:
+  postgres-sock:

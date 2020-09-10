@@ -19,25 +19,28 @@ services:
       DEBUG: '0'
       GCV_SUB_URI: '/'
       PGDATABASE: postgres
-      PGHOST: db
+      PGHOST: /run/postgresql
       PGNAME: postgres
-      PGPASSWORD: "${POSTGRES_PASSWORD}"
-      PGPORT: 5432
       PGUSER: postgres
     depends_on:
       db:
         condition: service_healthy
     restart: always
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "server.wsgi"]
+    volumes:
+      - postgres-sock:/run/postgresql
 
   db:
     build: db
     environment:
-      POSTGRES_PASSWORD:
+      POSTGRES_PASSWORD: postgres
     healthcheck:
-      test: "pg_isready -U postgres -h 127.0.0.1 || exit 1"
+      test: "pg_isready -U postgres || exit 1"
       retries: 10
     restart: always
+    command: -c listen_addresses=''
+    volumes:
+      - postgres-sock:/run/postgresql
 
   redisearch:
     image: redislabs/redisearch:1.6.13
@@ -57,11 +60,12 @@ services:
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_HOST: db
+      POSTGRES_HOST: /run/postgresql
       REDIS_HOST: redisearch
     command:
       - --no-reload
+    volumes:
+      - postgres-sock:/run/postgresql
 
   gene_search:
     build: search/microservices/gene_search
@@ -121,3 +125,6 @@ services:
       CHROMOSOME_REGION_ADDR: chromosome_region:8081
     command:
       - --no-grpc
+
+volumes:
+  postgres-sock:

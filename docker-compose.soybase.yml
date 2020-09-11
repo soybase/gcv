@@ -29,7 +29,7 @@ services:
       db:
         condition: service_healthy
     restart: always
-    command: ["gunicorn", "--bind", "0.0.0.0:8000", "server.wsgi"]
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "120", "server.wsgi"]
     volumes:
       - postgres-sock:/run/postgresql
 
@@ -146,7 +146,7 @@ services:
         condition: service_healthy
     restart: always
     # default 30 second timeout results in worker timeout (and Bad Gateway 502 on client)
-    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "60", "server.wsgi"]
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "120", "server.wsgi"]
     volumes:
       - liu2020-postgres-sock:/run/postgresql
 

@@ -35,7 +35,7 @@
     ]
   },
   "miscellaneous": {
-    "searchHelpText": "Try <b>Glyma.01G000100</b> or <b>GlymaLee.02G000400</b> or <b>Gm01:1-1000000</b>; or try them all together!"
+    "searchHelpText": "Try <b>Glyma.01G000100</b> or <b>GlymaLee.02G000400</b> or <b>Gm01:1-1000000</b> or <b>Chr01:100000-200000; or try them all together!"
   },
   "servers": [
     {
@@ -78,6 +78,48 @@
       "region": {
         "type": "GET",
         "url": "http://localhost:8083/chromosome-region"
+      }
+    },
+    {
+      "id": "liu2020",
+      "name": "Liu2020",
+      "description": "Integrating Genetics and Genomics to Advance Soybean Research",
+      "website": "https://soybase.org/",
+      "macroColors": {
+        "scriptUrl": "https://cdn.rawgit.com/legumeinfo/lis-taxon-symbology/01e02d99/dist/bundle.js",
+        "functionName": "taxonChroma.get"
+      },
+      "microSearch": {
+        "type": "POST",
+        "url": "http://localhost:8000/liu2020/services/v2/micro-synteny-search/"
+      },
+      "geneLinks": {
+        "type": "GET",
+        "url": "https://legumeinfo.org/gene_links/"
+      },
+      "familyTreeLink": {
+        "type": "GET",
+        "url": "https://legumeinfo.org/chado_gene_phylotree_v2?family="
+      },
+      "chromosome": {
+        "type": "POST",
+        "url": "http://localhost:8000/liu2020/services/v2/chromosome/"
+      },
+      "genes": {
+        "type": "POST",
+        "url": "http://localhost:8000/liu2020/services/v2/genes/"
+      },
+      "blocks": {
+        "type": "POST",
+        "url": "http://localhost:8000/liu2020/services/v2/pairwise-blocks/"
+      },
+      "search": {
+        "type": "GET",
+        "url": "http://localhost:8080/liu2020/search"
+      },
+      "region": {
+        "type": "GET",
+        "url": "http://localhost:8083/liu2020/chromosome-region"
       }
     }
   ]

@@ -1,0 +1,250 @@
+volumes:
+  postgres-sock:
+  liu2020-postgres-sock:
+
+services:
+  client:
+    build:
+      context: client
+      args:
+        GCV_SUB_URI: '${GCV_SUB_URI:-/}'
+    environment:
+      GCV_SUB_URI: '${GCV_SUB_URI:-/}'
+    ports:
+      - "${GCV_PORT:-80}:80"
+    depends_on:
+      - server
+    restart: always
+
+  server:
+    build: server
+    environment:
+      ALLOWED_HOSTS: '*'
+      DEBUG: '0'
+      PGDATABASE: postgres
+      PGHOST: /run/postgresql
+      PGNAME: postgres
+      PGUSER: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "server.wsgi"]
+    volumes:
+      - postgres-sock:/run/postgresql
+
+  db:
+    build: db
+    environment:
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: "pg_isready -U postgres || exit 1"
+      retries: 10
+    restart: always
+    command: -c listen_addresses=''
+    volumes:
+      - postgres-sock:/run/postgresql
+
+  redisearch:
+    image: redislabs/redisearch:1.6.13
+    healthcheck:
+      test: "redis-cli ping"
+    restart: always
+
+  chado_to_redisearch:
+    build: search/database 
+    depends_on:
+      db:
+        condition: service_healthy
+      redisearch:
+        condition: service_healthy
+    # load redisearch from chado only once
+    restart: on-failure
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_HOST: /run/postgresql
+      REDIS_HOST: redisearch
+    command:
+      - --no-reload
+    volumes:
+      - postgres-sock:/run/postgresql
+
+  gene_search:
+    build: search/microservices/gene_search
+    depends_on:
+      - chado_to_redisearch
+    restart: always
+    environment:
+      REDIS_HOST: redisearch
+    expose:
+      - "8081"
+    command:
+      - --no-http
+
+
+  chromosome_search:
+    build: search/microservices/chromosome_search
+    depends_on:
+      - chado_to_redisearch
+    restart: always
+    environment:
+      REDIS_HOST: redisearch
+      GRPC_HOST: "0.0.0.0"
+    expose:
+      - "8081"
+    command:
+      - --no-http
+
+
+  chromosome_region:
+    build: search/microservices/chromosome_region
+    depends_on:
+      - chado_to_redisearch
+    restart: always
+    environment:
+      HTTP_HOST: "0.0.0.0"
+      REDIS_HOST: redisearch
+      GRPC_HOST: "0.0.0.0"
+    expose:
+      - "8080"
+      - "8081"
+
+  search:
+    build: search/microservices/search
+    depends_on:
+      - gene_search
+      - chromosome_search
+      - chromosome_region
+    restart: always
+    expose:
+      - "8080"
+    environment:
+#     GRPC_VERBOSITY: 'debug'
+#     GRPC_TRACE: 'all'
+      HTTP_HOST: "0.0.0.0"
+      GENE_SEARCH_ADDR: gene_search:8081
+      CHROMOSOME_SEARCH_ADDR: chromosome_search:8081
+      CHROMOSOME_REGION_ADDR: chromosome_region:8081
+    command:
+      - --no-grpc
+
+########################################
+# liu2020
+########################################
+  liu2020-server:
+    build: server
+    environment:
+      ALLOWED_HOSTS: '*'
+      DEBUG: '0'
+      PGDATABASE: postgres
+      PGHOST: /run/postgresql
+      PGNAME: postgres
+      PGUSER: postgres
+    depends_on:
+      liu2020-db:
+        condition: service_healthy
+    restart: always
+    # default 30 second timeout results in worker timeout (and Bad Gateway 502 on client)
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "60", "server.wsgi"]
+    volumes:
+      - liu2020-postgres-sock:/run/postgresql
+
+  liu2020-db:
+    build:
+      context: .
+      dockerfile: Dockerfile.soybase
+      target: liu2020
+    environment:
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: "pg_isready -U postgres || exit 1"
+      retries: 10
+    restart: always
+    command: -c listen_addresses=''
+    volumes:
+      - liu2020-postgres-sock:/run/postgresql
+
+  liu2020-redisearch:
+    image: redislabs/redisearch:1.6.13
+    healthcheck:
+      test: "redis-cli ping"
+    restart: always
+
+  liu2020-chado_to_redisearch:
+    build: search/database 
+    depends_on:
+      liu2020-db:
+        condition: service_healthy
+      liu2020-redisearch:
+        condition: service_healthy
+    # load redisearch from chado only once
+    restart: on-failure
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_HOST: /run/postgresql
+      REDIS_HOST: liu2020-redisearch
+    command:
+      - --no-reload
+    volumes:
+      - liu2020-postgres-sock:/run/postgresql
+
+  liu2020-gene_search:
+    build: search/microservices/gene_search
+    depends_on:
+      - liu2020-chado_to_redisearch
+    restart: always
+    environment:
+      REDIS_HOST: liu2020-redisearch
+    expose:
+      - "8081"
+    command:
+      - --no-http
+
+
+  liu2020-chromosome_search:
+    build: search/microservices/chromosome_search
+    depends_on:
+      - liu2020-chado_to_redisearch
+    restart: always
+    environment:
+      REDIS_HOST: liu2020-redisearch
+      GRPC_HOST: "0.0.0.0"
+    expose:
+      - "8081"
+    command:
+      - --no-http
+
+
+  liu2020-chromosome_region:
+    build: search/microservices/chromosome_region
+    depends_on:
+      - liu2020-chado_to_redisearch
+    restart: always
+    environment:
+      HTTP_HOST: "0.0.0.0"
+      REDIS_HOST: liu2020-redisearch
+      GRPC_HOST: "0.0.0.0"
+    expose:
+      - "8080"
+      - "8081"
+
+  liu2020-search:
+    build: search/microservices/search
+    depends_on:
+      - liu2020-gene_search
+      - liu2020-chromosome_search
+      - liu2020-chromosome_region
+    restart: always
+    expose:
+      - "8080"
+    environment:
+#     GRPC_VERBOSITY: 'debug'
+#     GRPC_TRACE: 'all'
+      HTTP_HOST: "0.0.0.0"
+      GENE_SEARCH_ADDR: liu2020-gene_search:8081
+      CHROMOSOME_SEARCH_ADDR: liu2020-chromosome_search:8081
+      CHROMOSOME_REGION_ADDR: liu2020-chromosome_region:8081
+    command:
+      - --no-grpc

@@ -1,0 +1,9 @@
+# db service images
+
+FROM postgres:12.4-alpine AS glycine
+
+RUN wget -O /docker-entrypoint-initdb.d/chado_gcv_glycine_for_soybase.sql.xz https://iastate.box.com/shared/static/g4j5alz3z8oe953pcwfrmkvmxf47fyzh.xz
+
+FROM postgres:12.4-alpine AS liu2020
+
+RUN wget -O /docker-entrypoint-initdb.d/chado_gcv_glycine_liu2020_pangenome.sql.xz https://iastate.box.com/shared/static/kamqucn6dvoek8gks74vlfuagjmjoahc.xz

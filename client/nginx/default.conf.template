@@ -1,15 +1,3 @@
-upstream chromosome_region {
-    server chromosome_region:8080;
-}
-
-upstream search {
-    server search:8080;
-}
-
-upstream server {
-    server server:8000;
-}
-
 server {
 
     listen 80;
@@ -23,28 +11,11 @@ server {
     }
 
     # https://docs.gunicorn.org/en/stable/deploy.html
-    location ${GCV_SUB_URI}chromosome-region {
-        proxy_pass http://chromosome_region/chromosome-region;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Host $host;
-        proxy_redirect off;
-    }
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host $host;
+    proxy_redirect off;
 
-    location ${GCV_SUB_URI}search {
-        proxy_pass http://search/search;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Host $host;
-        proxy_redirect off;
-    }
-
-    location ${GCV_SUB_URI}services {
-        proxy_pass http://server/services;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Host $host;
-        proxy_redirect off;
-    }
+    include /etc/nginx/conf.d/*.locations;
 
 }

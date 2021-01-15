@@ -1,10 +1,10 @@
 # included by /etc/nginx/conf.d/default.conf
 
-location ${GCV_SUB_URI}chromosome-region {
+location ${GCV_SUB_URI}rest_services/chromosome-region {
     proxy_pass http://chromosome_region:8080/chromosome-region;
 }
 
-location ${GCV_SUB_URI}search {
+location ${GCV_SUB_URI}rest_services/search {
     proxy_pass http://search:8080/search;
 }
 

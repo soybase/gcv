@@ -1,5 +1,3 @@
-version: '2.4'
-
 services:
   client:
     build:
@@ -11,8 +9,17 @@ services:
     ports:
       - "${GCV_PORT:-80}:80"
     depends_on:
+      - chromosome_region
+      - search
       - server
     restart: always
+    healthcheck:
+      test: "nc -z localhost 80"
+    command: >
+      sh -c 'while ! nc -z chromosome_region 8080; do sleep 1; done &&
+             while ! nc -z search 8080; do sleep 1; done &&
+             while ! nc -z server 8000; do sleep 1; done &&
+             exec nginx -g "daemon off;"'
 
   server:
     build: server
@@ -27,7 +34,11 @@ services:
       db:
         condition: service_healthy
     restart: always
-    command: ["gunicorn", "--bind", "0.0.0.0:8000", "server.wsgi"]
+    healthcheck:
+      test: "nc -z localhost 8000"
+    command: >
+      sh -c 'while ! nc -z local:/run/postgresql/.s.PGSQL.5432; do sleep 1; done &&
+             exec gunicorn --bind 0.0.0.0:8000 server.wsgi'
     volumes:
       - postgres-sock:/run/postgresql
 
@@ -77,8 +88,11 @@ services:
       REDIS_HOST: redisearch
     expose:
       - "8081"
-    command:
-      - --no-http
+    healthcheck:
+      test: ["CMD", "bash", "-c", "(echo -n > /dev/tcp/localhost/8081) 2>/dev/null"]
+    entrypoint: >
+      bash -c 'while ! (echo -n > /dev/tcp/redisearch/6379) 2>/dev/null; do sleep 1; done &&
+               exec python3 microservice.py --no-http'
 
 
   chromosome_search:
@@ -91,8 +105,11 @@ services:
       GRPC_HOST: "0.0.0.0"
     expose:
       - "8081"
-    command:
-      - --no-http
+    healthcheck:
+      test: ["CMD", "bash", "-c", "(echo -n > /dev/tcp/localhost/8081) 2>/dev/null"]
+    entrypoint: >
+      bash -c 'while ! (echo -n > /dev/tcp/redisearch/6379) 2>/dev/null; do sleep 1; done &&
+               exec python3 microservice.py --no-http'
 
 
   chromosome_region:
@@ -104,9 +121,14 @@ services:
       HTTP_HOST: "0.0.0.0"
       REDIS_HOST: redisearch
       GRPC_HOST: "0.0.0.0"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "(echo -n > /dev/tcp/localhost/8080) 2>/dev/null"]
     expose:
       - "8080"
       - "8081"
+    entrypoint: >
+      bash -c 'while ! (echo -n > /dev/tcp/redisearch/6379) 2>/dev/null; do sleep 1; done &&
+               exec python3 microservice.py'
 
   search:
     build: search/microservices/search
@@ -117,6 +139,8 @@ services:
     restart: always
     expose:
       - "8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "(echo -n > /dev/tcp/localhost/8080) 2>/dev/null"]
     environment:
 #     GRPC_VERBOSITY: 'debug'
 #     GRPC_TRACE: 'all'
@@ -124,8 +148,11 @@ services:
       GENE_SEARCH_ADDR: gene_search:8081
       CHROMOSOME_SEARCH_ADDR: chromosome_search:8081
       CHROMOSOME_REGION_ADDR: chromosome_region:8081
-    command:
-      - --no-grpc
+    entrypoint: >
+      bash -c 'while ! (echo -n > /dev/tcp/gene_search/8081) 2>/dev/null; do sleep 1; done &&
+               while ! (echo -n > /dev/tcp/chromosome_search/8081) 2>/dev/null; do sleep 1; done &&
+               while ! (echo -n > /dev/tcp/chromosome_region/8081) 2>/dev/null; do sleep 1; done &&
+               exec python3 microservice.py --no-grpc'
 
 volumes:
   postgres-sock:

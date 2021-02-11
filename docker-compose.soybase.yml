@@ -212,6 +212,7 @@ services:
 
   liu2020-chado_to_redisearch:
     build: search/database 
+    shm_size: 1g
     depends_on:
       liu2020-db:
         condition: service_healthy
